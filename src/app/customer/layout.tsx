@@ -1,0 +1,144 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+
+export default function CustomerLayout({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+    
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      router.push('/');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Bottom nav items
+  const navItems = [
+    { href: '/customer', label: '首頁', icon: '🏠' },
+    { href: '/customer/search', label: '搜尋', icon: '🔍' },
+    { href: '/customer/cart', label: '購物車', icon: '🛒' },
+    { href: '/customer/orders', label: '訂單', icon: '📋' },
+    { href: '/customer/profile', label: '我的', icon: '👤' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50 md:hidden">
+        <div className="px-4 py-3 flex justify-between items-center">
+          <Link href="/customer" className="text-lg font-bold text-purple-600">
+            🛒 ShopSagi
+          </Link>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="text-sm text-gray-600 hover:text-red-600"
+              >
+                登出
+              </button>
+            ) : (
+              <Link
+                href="/customer/login"
+                className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm"
+              >
+                登入
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Desktop Header */}
+      <header className="bg-white shadow-sm hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-8">
+            <Link href="/customer" className="text-xl font-bold text-purple-600">
+              🛒 ShopSagi
+            </Link>
+            <nav className="flex gap-6">
+              <Link href="/customer" className="text-gray-600 hover:text-purple-600">
+                首頁
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                <span className="text-sm text-gray-600">{user.email}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-gray-600 hover:text-red-600"
+                >
+                  登出
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/customer/login"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                登入 / 註冊
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-8">
+        {children}
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden safe-area-bottom z-50">
+        <div className="flex justify-around items-center h-16">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center justify-center flex-1 py-2 ${
+                  isActive ? 'text-purple-600' : 'text-gray-500'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span className="text-xs mt-1">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
+}
