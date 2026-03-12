@@ -45,14 +45,14 @@ export default function Home() {
             <div className="pt-3 border-t space-y-2">
               <p className="text-xs text-gray-500 px-2">商務合作</p>
               <Link 
-                href="/auth/merchant" 
+                href="/merchant-login" 
                 className="block py-2 text-gray-600 text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 🏪 商戶登入
               </Link>
               <Link 
-                href="/auth/driver" 
+                href="/driver-login" 
                 className="block py-2 text-gray-600 text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -86,7 +86,7 @@ export default function Home() {
             
             {/* Secondary CTA - Merchant */}
             <Link
-              href="/auth/merchant"
+              href="/merchant-login"
               className="inline-flex items-center gap-2 px-8 md:px-12 py-4 md:py-5 bg-purple-600 text-white rounded-full text-lg md:text-xl font-bold hover:bg-purple-700 transition shadow-lg"
             >
               <span>🏪</span>
@@ -188,7 +188,7 @@ export default function Home() {
                   訂單抽 10%
                 </div>
                 <Link
-                  href="/auth/merchant"
+                  href="/merchant-login"
                   className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
                 >
                   商戶入駐
@@ -204,7 +204,7 @@ export default function Home() {
                   每單賺 HK$20-30
                 </div>
                 <Link
-                  href="/auth/driver"
+                  href="/driver-login"
                   className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
                 >
                   加入司機
@@ -234,13 +234,13 @@ export default function Home() {
           <p className="text-purple-100 mb-5 text-sm md:text-base">加入舖記，一齊賺錢</p>
           <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
             <Link
-              href="/auth/merchant"
+              href="/merchant-login"
               className="px-5 py-2.5 bg-white text-purple-600 rounded-full font-medium hover:bg-purple-50 text-sm md:text-base"
             >
               🏪 商戶入駐
             </Link>
             <Link
-              href="/auth/driver"
+              href="/driver-login"
               className="px-5 py-2.5 bg-white text-blue-600 rounded-full font-medium hover:bg-blue-50 text-sm md:text-base"
             >
               🚚 加入司機
@@ -287,10 +287,10 @@ export default function Home() {
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
               <span className="text-xs text-gray-500">商務合作：</span>
               <div className="flex gap-4 text-sm">
-                <Link href="/auth/merchant" className="hover:text-white transition">
+                <Link href="/merchant-login" className="hover:text-white transition">
                   商戶登入
                 </Link>
-                <Link href="/auth/driver" className="hover:text-white transition">
+                <Link href="/driver-login" className="hover:text-white transition">
                   司機登入
                 </Link>
                 <Link href="/register" className="hover:text-white transition">
