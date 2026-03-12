@@ -28,7 +28,8 @@ export default function CartPage() {
   const itemsByMerchant = items.reduce((acc, item) => {
     if (!acc[item.merchantName]) {
       acc[item.merchantName] = [];
-       acc[item.merchantName].push(item);
+    }
+    acc[item.merchantName].push(item);
     return acc;
   }, {} as Record<string, typeof items>);
 

@@ -12,9 +12,7 @@ function CartIcon() {
   return (
     <Link
       href="/customer/cart"
-      className={`flex flex-col items-center justify-center flex-1 py-2 ${
-        pathname === '/customer/cart' ? 'text-purple-600' : 'text-gray-500'
-      }`}
+      className="flex flex-col items-center justify-center flex-1 py-2"
     >
       <span className="text-xl relative">
         🛒
@@ -29,15 +27,7 @@ function CartIcon() {
   );
 }
 
-function CustomerLayoutContent({ children }: { children: React.ReactNode }) {
-  return (
-    <CartProvider>
-      <CustomerLayoutContentInner>{children}</CustomerLayoutContentInner>
-    </CartProvider>
-  );
-}
-
-function CustomerLayoutContentInner({ children }: { children: React.ReactNode }) {
+export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -72,7 +62,6 @@ function CustomerLayoutContentInner({ children }: { children: React.ReactNode })
     );
   }
 
-  // Bottom nav items
   const navItems = [
     { href: '/customer', label: '首頁', icon: '🏠' },
     { href: '/customer/search', label: '搜尋', icon: '🔍' },
@@ -82,98 +71,57 @@ function CustomerLayoutContentInner({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 md:hidden">
-        <div className="px-4 py-3 flex justify-between items-center">
-          <Link href="/customer" className="text-lg font-bold text-purple-600">
-            🛒 ShopSagi
-          </Link>
-          <div className="flex items-center gap-3">
-            {user ? (
-              <button
-                onClick={handleLogout}
-                className="text-sm text-gray-600 hover:text-red-600"
-              >
-                登出
-              </button>
-            ) : (
-              <Link
-                href="/customer/login"
-                className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm"
-              >
-                登入
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Desktop Header */}
-      <header className="bg-white shadow-sm hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-8">
+    <CartProvider>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/customer" className="text-xl font-bold text-purple-600">
               🛒 ShopSagi
             </Link>
-            <nav className="flex gap-6">
-              <Link href="/customer" className="text-gray-600 hover:text-purple-600">
-                首頁
-              </Link>
-            </nav>
+            <div className="flex items-center gap-4">
+              {user ? (
+                <>
+                  <span className="text-sm text-gray-600 hidden md:inline">{user.email}</span>
+                  <button onClick={handleLogout} className="text-sm text-gray-600 hover:text-red-600">
+                    登出
+                  </button>
+                </>
+              ) : (
+                <Link href="/register" className="text-sm text-purple-600 hover:underline">
+                  登入
+                </Link>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <span className="text-sm text-gray-600">{user.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-600 hover:text-red-600"
+        </header>
+
+        <main className="max-w-7xl mx-auto px-4 py-6 pb-20 md:pb-8">
+          {children}
+        </main>
+
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden z-50">
+          <div className="flex justify-around items-center h-16">
+            {navItems.map((item) => {
+              if (item.component) {
+                return <item.component key={item.href} />;
+              }
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex flex-col items-center justify-center flex-1 py-2 ${
+                    isActive ? 'text-purple-600' : 'text-gray-500'
+                  }`}
                 >
-                  登出
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/customer/login"
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-              >
-                登入 / 註冊
-              </Link>
-            )}
+                  <span className="text-xl">{item.icon}</span>
+                  <span className="text-xs mt-1">{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-8">
-        {children}
-      </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden safe-area-bottom z-50">
-        <div className="flex justify-around items-center h-16">
-          {navItems.map((item) => {
-            if (item.component) {
-              return <item.component key={item.href} />;
-            }
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 py-2 ${
-                  isActive ? 'text-purple-600' : 'text-gray-500'
-                }`}
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-xs mt-1">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+        </nav>
+      </div>
     </CartProvider>
   );
 }

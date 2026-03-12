@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isLogin, setIsLogin] = useState(false);
   const [role, setRole] = useState<'merchant' | 'driver'>('merchant');
   const [email, setEmail] = useState('');
@@ -17,14 +18,6 @@ export default function RegisterPage() {
   const [shopName, setShopName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Set role from URL query parameter
-  useEffect(() => {
-    const roleParam = searchParams.get('role');
-    if (roleParam === 'driver' || roleParam === 'merchant') {
-      setRole(roleParam);
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
