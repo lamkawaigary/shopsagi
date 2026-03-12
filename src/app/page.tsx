@@ -8,12 +8,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Simple & Clean */}
+      {/* Header - Simple Nav */}
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           <Link href="/" className="text-xl font-bold text-purple-600">
             🛒 ShopSagi 舖記
           </Link>
+          
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-6">
+            <Link href="/#features" className="text-gray-600 hover:text-purple-600 transition">Features</Link>
+            <Link href="/#pricing" className="text-gray-600 hover:text-purple-600 transition">Pricing</Link>
+            <Link href="/#about" className="text-gray-600 hover:text-purple-600 transition">About</Link>
+            <Link href="/#contact" className="text-gray-600 hover:text-purple-600 transition">Contact</Link>
+          </nav>
           
           {/* Mobile Menu Button */}
           <button 
@@ -75,6 +83,15 @@ export default function Home() {
               <span>🛍️</span>
               <span>開始購物</span>
             </Link>
+            
+            {/* Secondary CTA - Merchant */}
+            <Link
+              href="/merchant/login"
+              className="inline-flex items-center gap-2 px-8 md:px-12 py-4 md:py-5 bg-purple-600 text-white rounded-full text-lg md:text-xl font-bold hover:bg-purple-700 transition shadow-lg"
+            >
+              <span>🏪</span>
+              <span>商戶入駐</span>
+            </Link>
           </div>
         </section>
 
@@ -134,7 +151,7 @@ export default function Home() {
         </section>
 
         {/* Why Choose Us */}
-        <section className="py-8 md:py-12 bg-white">
+        <section id="features" className="py-8 md:py-12 bg-white">
           <div className="max-w-4xl mx-auto px-4">
             <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-center">點解選舖記？</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -157,8 +174,62 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Pricing Section */}
+        <section id="pricing" className="py-10 md:py-16 bg-gray-50">
+          <div className="max-w-4xl mx-auto px-4">
+            <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">定價</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Merchant Pricing */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="text-2xl mb-3">🏪</div>
+                <h3 className="font-bold text-lg mb-2">商戶入駐</h3>
+                <p className="text-gray-600 text-sm mb-4">免費開舖，立即上架</p>
+                <div className="text-2xl font-bold text-purple-600 mb-4">
+                  訂單抽 10%
+                </div>
+                <Link
+                  href="/merchant/login"
+                  className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
+                >
+                  商戶入駐
+                </Link>
+              </div>
+              
+              {/* Driver Pricing */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="text-2xl mb-3">🚚</div>
+                <h3 className="font-bold text-lg mb-2">司機加入</h3>
+                <p className="text-gray-600 text-sm mb-4">免加盟費，自由接單</p>
+                <div className="text-2xl font-bold text-purple-600 mb-4">
+                  每單賺 HK$20-30
+                </div>
+                <Link
+                  href="/driver/login"
+                  className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
+                >
+                  加入司機
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* About Section */}
+        <section id="about" className="py-10 md:py-16 bg-white">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h2 className="text-xl md:text-2xl font-bold mb-4">關於舖記</h2>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              ShopSagi 舖記係香港人一站式購物平台，等你可以喺屋企都可以買到各地好嘢。
+              我哋致力於為香港人提供最方便、最優惠既網上購物體驗。
+            </p>
+            <p className="text-sm text-gray-500">
+              想了解更多？聯絡我們：hello@shopsagi.com
+            </p>
+          </div>
+        </section>
+
         {/* CTA Section */}
-        <section className="py-10 md:py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-center px-4">
+        <section id="contact" className="py-10 md:py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-center px-4">
           <h2 className="text-xl md:text-2xl font-bold mb-3">想開舖？想做司機？</h2>
           <p className="text-purple-100 mb-5 text-sm md:text-base">加入舖記，一齊賺錢</p>
           <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
