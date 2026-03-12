@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,13 +33,15 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth!, email, password);
       
-      // TODO: Save role and shop name to Firestore
-      // await setDoc(doc(db, 'users', userCredential.user.uid), {
-      //   role,
-      //   shopName: role === 'merchant' ? shopName : null,
-      // });
+      // Save role and shop name to Firestore
+      await setDoc(doc(db!, 'users', userCredential.user.uid), {
+        email: userCredential.user.email,
+        role,
+        shopName: role === 'merchant' ? shopName : null,
+        createdAt: new Date().toISOString(),
+      });
 
       if (role === 'merchant') {
         router.push('/merchant/dashboard');
@@ -53,7 +56,7 @@ export default function RegisterPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth) {
+    if (!auth || !db) {
       setError('系統暫時不可用，請稍後再試');
       return;
     }
@@ -62,7 +65,20 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      
+      // Check if user already exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      
+      if (!userDoc.exists()) {
+        // New user - create user document
+        await setDoc(doc(db, 'users', result.user.uid), {
+          email: result.user.email,
+          role,
+          shopName: role === 'merchant' ? shopName : null,
+          createdAt: new Date().toISOString(),
+        });
+      }
       
       if (role === 'merchant') {
         router.push('/merchant/dashboard');
