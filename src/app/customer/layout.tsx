@@ -5,8 +5,39 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { CartProvider, useCart } from '@/lib/cart';
 
-export default function CustomerLayout({ children }: { children: React.ReactNode }) {
+function CartIcon() {
+  const { itemCount } = useCart();
+  return (
+    <Link
+      href="/customer/cart"
+      className={`flex flex-col items-center justify-center flex-1 py-2 ${
+        pathname === '/customer/cart' ? 'text-purple-600' : 'text-gray-500'
+      }`}
+    >
+      <span className="text-xl relative">
+        🛒
+        {itemCount > 0 && (
+          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+            {itemCount > 9 ? '9+' : itemCount}
+          </span>
+        )}
+      </span>
+      <span className="text-xs mt-1">購物車</span>
+    </Link>
+  );
+}
+
+function CustomerLayoutContent({ children }: { children: React.ReactNode }) {
+  return (
+    <CartProvider>
+      <CustomerLayoutContentInner>{children}</CustomerLayoutContentInner>
+    </CartProvider>
+  );
+}
+
+function CustomerLayoutContentInner({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -45,7 +76,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const navItems = [
     { href: '/customer', label: '首頁', icon: '🏠' },
     { href: '/customer/search', label: '搜尋', icon: '🔍' },
-    { href: '/customer/cart', label: '購物車', icon: '🛒' },
+    { href: '/customer/cart', label: '購物車', icon: '🛒', component: CartIcon },
     { href: '/customer/orders', label: '訂單', icon: '📋' },
     { href: '/customer/profile', label: '我的', icon: '👤' },
   ];
@@ -123,6 +154,9 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden safe-area-bottom z-50">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
+            if (item.component) {
+              return <item.component key={item.href} />;
+            }
             const isActive = pathname === item.href;
             return (
               <Link
@@ -140,5 +174,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         </div>
       </nav>
     </div>
+    </CartProvider>
   );
 }
