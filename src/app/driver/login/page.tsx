@@ -120,23 +120,8 @@ export default function DriverLoginPage() {
     router.push('/driver/dashboard');
   };
 
-  // Check for redirect result on mount
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      if (!auth || !db) return;
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          await handleGoogleLoginSuccess(result);
-        }
-      } catch (err: any) {
-        // Only show error for specific cases, not for "no result"
-        console.log('Redirect check:', err.code || err.message);
-        // Silent fail - user can still use the form
-      }
-    };
-    checkRedirectResult();
-  }, []);
+  // Note: Redirect flow is not used to avoid Safari ITP issues
+  // Users can use popup flow or email/password
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
