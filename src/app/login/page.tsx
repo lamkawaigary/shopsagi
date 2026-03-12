@@ -25,7 +25,7 @@ export default function LoginPage() {
           </Link>
 
           <Link
-            href="/driver/login"
+            href="/login/driver"
             className="block w-full p-4 md:p-6 border-2 border-green-500 bg-green-50 rounded-xl hover:bg-green-100 transition"
           >
             <div className="text-3xl md:text-4xl mb-2">🚚</div>

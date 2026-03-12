@@ -23,7 +23,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
       setUser(currentUser);
       setLoading(false);
       if (!currentUser) {
-        router.push('/driver/login');
+        router.push('/login/driver');
       }
     });
 
@@ -34,7 +34,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
     if (auth) {
       await signOut(auth);
     }
-    router.push('/driver/login');
+    router.push('/login/driver');
   };
 
   if (loading) {
