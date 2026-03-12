@@ -103,7 +103,7 @@ export default function LoginPage() {
     router.push('/merchant/dashboard');
   };
 
-  // Check for redirect result on mount
+  // Note: Redirect flow not used
   useEffect(() => {
     const checkRedirectResult = async () => {
       if (!auth || !db) return;

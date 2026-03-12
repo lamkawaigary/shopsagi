@@ -159,7 +159,7 @@ export default function RegisterPage() {
     }
   };
 
-  // Check for redirect result on mount (for Safari redirect flow)
+  // Note: Redirect flow not used (for Safari redirect flow)
   useEffect(() => {
     const checkRedirectResult = async () => {
       if (!auth || !db) return;
