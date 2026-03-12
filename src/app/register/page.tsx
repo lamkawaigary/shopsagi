@@ -43,6 +43,19 @@ export default function RegisterPage() {
         createdAt: new Date().toISOString(),
       });
 
+      // Create driver-specific document if driver
+      if (role === 'driver') {
+        await setDoc(doc(db!, 'drivers', userCredential.user.uid), {
+          email: userCredential.user.email,
+          todayEarnings: 0,
+          todayCompleted: 0,
+          weekEarnings: 0,
+          totalEarnings: 0,
+          rating: 5.0,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
       if (role === 'merchant') {
         router.push('/merchant/dashboard');
       } else {
@@ -78,6 +91,19 @@ export default function RegisterPage() {
           shopName: role === 'merchant' ? shopName : null,
           createdAt: new Date().toISOString(),
         });
+
+        // Create driver-specific document if driver
+        if (role === 'driver') {
+          await setDoc(doc(db, 'drivers', result.user.uid), {
+            email: result.user.email,
+            todayEarnings: 0,
+            todayCompleted: 0,
+            weekEarnings: 0,
+            totalEarnings: 0,
+            rating: 5.0,
+            createdAt: new Date().toISOString(),
+          });
+        }
       }
       
       if (role === 'merchant') {
