@@ -75,28 +75,38 @@ export default function DriverDashboardPage() {
     if (!db) return;
     
     try {
-      // Fetch available orders (ready_for_pickup and no driver assigned)
+      // Fetch available orders (ready_for_pickup and no driver assigned) - simplified
       const availableQuery = query(
         collection(db, 'orders'),
         where('status', '==', 'ready_for_pickup'),
-        orderBy('createdAt', 'desc'),
         limit(20)
       );
       const availableSnapshot = await getDocs(availableQuery);
-      const available = availableSnapshot.docs
+      let available = availableSnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter((order: any) => !order.driverId) as Order[];
+      // Sort locally
+      available = available.sort((a: any, b: any) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
       setAvailableOrders(available);
 
-      // Fetch my orders (accepted by this driver)
+      // Fetch my orders (accepted by this driver) - simplified
       const myQuery = query(
         collection(db, 'orders'),
         where('driverId', '==', userId),
-        orderBy('createdAt', 'desc'),
         limit(20)
       );
       const mySnapshot = await getDocs(myQuery);
-      const my = mySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Order[];
+      let my = mySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Order[];
+      // Sort locally
+      my = my.sort((a: any, b: any) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
       setMyOrders(my);
     } catch (error) {
       console.error('Error fetching orders:', error);

@@ -65,18 +65,23 @@ export default function DashboardPage() {
     if (!db) return;
     
     try {
-      // Fetch orders for this merchant
+      // Fetch orders for this merchant (simplified query - no index needed)
       const ordersQuery = query(
         collection(db, 'orders'),
         where('merchantId', '==', userId),
-        orderBy('createdAt', 'desc'),
-        limit(5)
+        limit(20)
       );
       const ordersSnapshot = await getDocs(ordersQuery);
-      const orders = ordersSnapshot.docs.map(doc => ({
+      let orders = ordersSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      // Sort locally
+      orders = orders.sort((a: any, b: any) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      }).slice(0, 5);
       setRecentOrders(orders);
 
       // Calculate stats
