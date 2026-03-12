@@ -22,19 +22,20 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-      if (!currentUser) {
-        router.push('/driver-signin');
+      // Don't redirect if already on login page
+      if (!currentUser && pathname !== '/driver/login') {
+        router.push('/driver/login');
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, pathname]);
 
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
     }
-    router.push('/driver-signin');
+    router.push('/driver/login');
   };
 
   if (loading) {

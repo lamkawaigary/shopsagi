@@ -52,7 +52,7 @@ export default function Home() {
                 🏪 商戶登入
               </Link>
               <Link 
-                href="/driver-signin" 
+                href="/driver/login" 
                 className="block py-2 text-gray-600 text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -204,7 +204,7 @@ export default function Home() {
                   每單賺 HK$20-30
                 </div>
                 <Link
-                  href="/driver-signin"
+                  href="/driver/login"
                   className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
                 >
                   加入司機
@@ -240,7 +240,7 @@ export default function Home() {
               🏪 商戶入駐
             </Link>
             <Link
-              href="/driver-signin"
+              href="/driver/login"
               className="px-5 py-2.5 bg-white text-blue-600 rounded-full font-medium hover:bg-blue-50 text-sm md:text-base"
             >
               🚚 加入司機
@@ -290,7 +290,7 @@ export default function Home() {
                 <Link href="/merchant/login" className="hover:text-white transition">
                   商戶登入
                 </Link>
-                <Link href="/driver-signin" className="hover:text-white transition">
+                <Link href="/driver/login" className="hover:text-white transition">
                   司機登入
                 </Link>
                 <Link href="/register" className="hover:text-white transition">
