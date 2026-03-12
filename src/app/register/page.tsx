@@ -218,6 +218,13 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* Safari warning */}
+        {typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent) && (
+          <div className="bg-yellow-50 text-yellow-700 p-3 rounded-lg mb-4 text-xs">
+            ⚠️ Safari 用戶：Google 登入可能不穩定，建議使用下方「電子郵件」及「密碼」註冊或登入
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && role === 'merchant' && (
             <div>

@@ -138,6 +138,13 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Safari warning */}
+        {typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent) && (
+          <div className="bg-yellow-50 text-yellow-700 p-3 rounded-lg mb-4 text-xs">
+            ⚠️ Safari 用戶：Google 登入可能不穩定，建議使用「電子郵件」及「密碼」登入
+          </div>
+        )}
+
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
