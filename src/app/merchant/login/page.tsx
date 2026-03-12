@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useState, useEffect } from 'react';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,6 +13,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Check if browser is Safari
+  const isSafari = typeof window !== 'undefined' && 
+    /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +31,14 @@ export default function LoginPage() {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Save to Firestore
+        await setDoc(doc(db!, 'users', userCredential.user.uid), {
+          email: userCredential.user.email,
+          role: 'merchant',
+          shopName: null,
+          createdAt: new Date().toISOString(),
+        });
       }
       router.push('/merchant/dashboard');
     } catch (err: any) {
@@ -37,7 +49,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth) {
+    if (!auth || !db) {
       setError('系統暫時不可用，請稍後再試');
       return;
     }
@@ -46,14 +58,69 @@ export default function LoginPage() {
     
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push('/merchant/dashboard');
+      
+      // For Safari, use redirect instead of popup
+      if (isSafari) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+      
+      // For other browsers, try popup first
+      try {
+        const result = await signInWithPopup(auth, provider);
+        await handleGoogleLoginSuccess(result);
+      } catch (popupErr: any) {
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
+      }
     } catch (err: any) {
-      setError(err.message || 'Google login failed');
+      console.error('Google login error:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('登入視窗被關閉，請重試');
+      } else if (err.message?.includes('state')) {
+        setError('瀏覽器設定導致登入失敗，請嘗試使用 email 及密碼登入');
+      } else {
+        setError(err.message || 'Google login failed');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoogleLoginSuccess = async (result: any) => {
+    const userDoc = await getDoc(doc(db!, 'users', result.user.uid));
+    if (!userDoc.exists()) {
+      await setDoc(doc(db!, 'users', result.user.uid), {
+        email: result.user.email,
+        role: 'merchant',
+        shopName: null,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    router.push('/merchant/dashboard');
+  };
+
+  // Check for redirect result on mount
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      if (!auth || !db) return;
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          await handleGoogleLoginSuccess(result);
+        }
+      } catch (err: any) {
+        console.error('Redirect result error:', err);
+        if (err.message?.includes('state')) {
+          setError('瀏覽器設定導致登入失敗，請嘗試使用 email 及密碼登入');
+        }
+      }
+    };
+    checkRedirectResult();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

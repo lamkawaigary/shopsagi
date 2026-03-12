@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -77,6 +77,10 @@ export default function RegisterPage() {
     }
   };
 
+  // Check if browser is Safari
+  const isSafari = typeof window !== 'undefined' && 
+    /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
   const handleGoogleLogin = async () => {
     if (!auth || !db) {
       setError('系統暫時不可用，請稍後再試');
@@ -87,45 +91,94 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
       
-      // Check if user already exists in Firestore
-      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+      // For Safari, use redirect instead of popup
+      if (isSafari) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       
-      if (!userDoc.exists()) {
-        // New user - create user document
-        await setDoc(doc(db, 'users', result.user.uid), {
-          email: result.user.email,
-          role,
-          shopName: role === 'merchant' ? shopName : null,
-          createdAt: new Date().toISOString(),
-        });
-
-        // Create driver-specific document if driver
-        if (role === 'driver') {
-          await setDoc(doc(db, 'drivers', result.user.uid), {
-            email: result.user.email,
-            todayEarnings: 0,
-            todayCompleted: 0,
-            weekEarnings: 0,
-            totalEarnings: 0,
-            rating: 5.0,
-            createdAt: new Date().toISOString(),
-          });
+      // For other browsers, try popup first
+      try {
+        const result = await signInWithPopup(auth, provider);
+        await handleGoogleLoginSuccess(result);
+      } catch (popupErr: any) {
+        // If popup fails (e.g., blocked by browser), fall back to redirect
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
         }
       }
-      
-      if (role === 'merchant') {
-        router.push('/merchant/dashboard');
-      } else {
-        router.push('/driver/dashboard');
-      }
     } catch (err: any) {
-      setError(err.message || 'Google登入失敗');
+      console.error('Google login error:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('登入視窗被關閉，請重試');
+      } else if (err.message?.includes('state')) {
+        setError('瀏覽器設定導致登入失敗，請嘗試使用 email 及密碼登入，或使用其他瀏覽器');
+      } else {
+        setError(err.message || 'Google登入失敗');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle Google login success
+  const handleGoogleLoginSuccess = async (result: any) => {
+    // Check if user already exists in Firestore
+    const userDoc = await getDoc(doc(db!, 'users', result.user.uid));
+    
+    if (!userDoc.exists()) {
+      // New user - create user document
+      await setDoc(doc(db!, 'users', result.user.uid), {
+        email: result.user.email,
+        role,
+        shopName: role === 'merchant' ? shopName : null,
+        createdAt: new Date().toISOString(),
+      });
+
+      // Create driver-specific document if driver
+      if (role === 'driver') {
+        await setDoc(doc(db!, 'drivers', result.user.uid), {
+          email: result.user.email,
+          todayEarnings: 0,
+          todayCompleted: 0,
+          weekEarnings: 0,
+          totalEarnings: 0,
+          rating: 5.0,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+    
+    if (role === 'merchant') {
+      router.push('/merchant/dashboard');
+    } else {
+      router.push('/driver/dashboard');
+    }
+  };
+
+  // Check for redirect result on mount (for Safari redirect flow)
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      if (!auth || !db) return;
+      
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          await handleGoogleLoginSuccess(result);
+        }
+      } catch (err: any) {
+        console.error('Redirect result error:', err);
+        if (err.message?.includes('state')) {
+          setError('瀏覽器設定導致登入失敗，請嘗試使用 email 及密碼登入');
+        }
+      }
+    };
+    
+    checkRedirectResult();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
