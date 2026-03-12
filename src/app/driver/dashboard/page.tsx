@@ -63,7 +63,7 @@ export default function DriverDashboardPage() {
         await fetchStats(currentUser.uid);
       } else {
         // Not logged in, redirect to login
-        router.push('/login/driver');
+        router.push('/driver-signin');
       }
       setLoading(false);
     });
