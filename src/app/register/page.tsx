@@ -170,10 +170,8 @@ export default function RegisterPage() {
           await handleGoogleLoginSuccess(result);
         }
       } catch (err: any) {
-        console.error('Redirect result error:', err);
-        if (err.message?.includes('state')) {
-          setError('瀏覽器設定導致登入失敗，請嘗試使用 email 及密碼登入');
-        }
+        // Silent fail - user can still use the form
+        console.log('Redirect check:', err.code || err.message);
       }
     };
     

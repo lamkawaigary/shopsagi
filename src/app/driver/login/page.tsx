@@ -130,10 +130,9 @@ export default function DriverLoginPage() {
           await handleGoogleLoginSuccess(result);
         }
       } catch (err: any) {
-        console.error('Redirect result error:', err);
-        if (err.message?.includes('state')) {
-          setError('瀏覽器設定導致登入失敗，請嘗試使用 email 及密碼登入');
-        }
+        // Only show error for specific cases, not for "no result"
+        console.log('Redirect check:', err.code || err.message);
+        // Silent fail - user can still use the form
       }
     };
     checkRedirectResult();
