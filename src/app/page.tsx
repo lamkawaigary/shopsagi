@@ -252,6 +252,31 @@ export default function Home() {
       {/* Footer - Business Links Here */}
       <footer className="bg-gray-900 text-gray-400 py-8 md:py-10">
         <div className="max-w-6xl mx-auto px-4">
+          
+          {/* Explicit Login Section */}
+          <div className="bg-gray-800 rounded-xl p-6 md:p-8 mb-8">
+            <h3 className="text-white font-bold text-lg mb-4 text-center">商戶 / 司機登入</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <Link 
+                href="/register" 
+                className="flex items-center justify-center gap-3 py-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium"
+              >
+                <span className="text-xl">🏪</span>
+                <span>商戶入駐 / 登入</span>
+              </Link>
+              <Link 
+                href="/register?role=driver" 
+                className="flex items-center justify-center gap-3 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                <span className="text-xl">🚚</span>
+                <span>司機入駐 / 登入</span>
+              </Link>
+            </div>
+            <p className="text-gray-500 text-sm text-center mt-4">
+              顧客登入請點擊右上角「開始購物」
+            </p>
+          </div>
+
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-8">
             <div className="text-center md:text-left">
               <div className="text-white font-bold text-lg mb-2">🛒 ShopSagi 舖記</div>
