@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface DashboardStats {
   totalOrders: number;
@@ -14,8 +15,16 @@ interface DashboardStats {
   todayRevenue: number;
 }
 
+interface UserProfile {
+  shopName?: string;
+  email?: string;
+  role?: string;
+}
+
 export default function DashboardPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalOrders: 0,
     pendingOrders: 0,
@@ -34,13 +43,23 @@ export default function DashboardPage() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        // Fetch user profile from Firestore
+        if (db) {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            setProfile(userDoc.data() as UserProfile);
+          }
+        }
         await fetchDashboardData(currentUser.uid);
+      } else {
+        // Not logged in, redirect to login
+        router.push('/register');
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const fetchDashboardData = async (userId: string) => {
     if (!db) return;
@@ -137,6 +156,24 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Welcome Header with Shop Name */}
+      <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold">
+              {profile?.shopName ? `🏪 ${profile.shopName}` : '商戶控制台'}
+            </h2>
+            <p className="text-gray-600 text-sm mt-1">{profile?.email || user?.email}</p>
+          </div>
+          <Link
+            href="/merchant/shop"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+          >
+            ⚙️ 設定
+          </Link>
+        </div>
+      </div>
+
       <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">控制台</h2>
 
       {/* Stats Grid - 2x2 on mobile */}
