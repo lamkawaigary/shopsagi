@@ -188,7 +188,7 @@ export default function Home() {
                   訂單抽 10%
                 </div>
                 <Link
-                  href="/merchant-login"
+                  href="/login/merchant"
                   className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
                 >
                   商戶入駐
@@ -204,7 +204,7 @@ export default function Home() {
                   每單賺 HK$20-30
                 </div>
                 <Link
-                  href="/driver-login"
+                  href="/login/driver"
                   className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
                 >
                   加入司機
@@ -234,13 +234,13 @@ export default function Home() {
           <p className="text-purple-100 mb-5 text-sm md:text-base">加入舖記，一齊賺錢</p>
           <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
             <Link
-              href="/merchant-login"
+              href="/login/merchant"
               className="px-5 py-2.5 bg-white text-purple-600 rounded-full font-medium hover:bg-purple-50 text-sm md:text-base"
             >
               🏪 商戶入駐
             </Link>
             <Link
-              href="/driver-login"
+              href="/login/driver"
               className="px-5 py-2.5 bg-white text-blue-600 rounded-full font-medium hover:bg-blue-50 text-sm md:text-base"
             >
               🚚 加入司機
@@ -287,10 +287,10 @@ export default function Home() {
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
               <span className="text-xs text-gray-500">商務合作：</span>
               <div className="flex gap-4 text-sm">
-                <Link href="/merchant-login" className="hover:text-white transition">
+                <Link href="/login/merchant" className="hover:text-white transition">
                   商戶登入
                 </Link>
-                <Link href="/driver-login" className="hover:text-white transition">
+                <Link href="/login/driver" className="hover:text-white transition">
                   司機登入
                 </Link>
                 <Link href="/register" className="hover:text-white transition">

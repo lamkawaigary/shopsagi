@@ -87,9 +87,14 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                   </button>
                 </>
               ) : (
-                <Link href="/register" className="text-sm text-purple-600 hover:underline">
-                  登入
-                </Link>
+                <div className="flex gap-3">
+                  <Link href="/login/customer" className="text-sm text-gray-600 hover:text-purple-600">
+                    登入
+                  </Link>
+                  <Link href="/register" className="text-sm text-purple-600 hover:underline">
+                    註冊
+                  </Link>
+                </div>
               )}
             </div>
           </div>
