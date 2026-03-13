@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { useState } from 'react';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,49 +12,7 @@ export default function DriverLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  const isSafari = typeof window !== 'undefined' && 
-    /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-  // Handle redirect result on page load
-  useEffect(() => {
-    const handleRedirectResult = async () => {
-      if (!auth || !db) return;
-      
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          const user = result.user;
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.role === 'driver') {
-              router.push('/driver/dashboard');
-              return;
-            } else if (userData.role === 'customer') {
-              router.push('/customer');
-              return;
-            } else if (userData.role === 'merchant') {
-              router.push('/merchant/dashboard');
-              return;
-            }
-          }
-          router.push('/register');
-        }
-      } catch (err: any) {
-        console.error('Redirect result error:', err);
-        if (err.code !== 'auth/no-auth-event') {
-          setError('登入失敗，請重試');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleRedirectResult();
-  }, [router]);
+  const [loading, setLoading] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,11 +27,13 @@ export default function DriverLoginPage() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const userDoc = await getDoc(doc(db!, 'users', result.user.uid));
+      
       if (userDoc.exists() && userDoc.data().role === 'driver') {
-        router.push('/driver/dashboard');
+        window.location.href = '/driver/dashboard';
       } else {
         await auth.signOut();
         setError('呢個帳戶唔係司機帳戶，請用其他登入方式');
+        setLoading(false);
       }
     } catch (err: any) {
       console.error('Login error:', err);
@@ -82,7 +42,6 @@ export default function DriverLoginPage() {
       } else {
         setError(err.message || '登入失敗');
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -98,24 +57,8 @@ export default function DriverLoginPage() {
     
     try {
       const provider = new GoogleAuthProvider();
-      
-      if (isSafari) {
-        sessionStorage.setItem('loginRole', 'driver');
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-      
-      try {
-        const result = await signInWithPopup(auth, provider);
-        await handleGoogleSuccess(result);
-      } catch (popupErr: any) {
-        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
-          sessionStorage.setItem('loginRole', 'driver');
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw popupErr;
-        }
-      }
+      const result = await signInWithPopup(auth, provider);
+      await handleGoogleSuccess(result);
     } catch (err: any) {
       console.error('Google login error:', err);
       if (err.code === 'auth/popup-closed-by-user') {
@@ -134,26 +77,18 @@ export default function DriverLoginPage() {
     if (userDoc.exists()) {
       const userData = userDoc.data();
       if (userData.role === 'driver') {
-        router.push('/driver/dashboard');
+        window.location.href = '/driver/dashboard';
       } else if (userData.role === 'customer') {
-        router.push('/customer');
+        window.location.href = '/customer';
       } else if (userData.role === 'merchant') {
-        router.push('/merchant/dashboard');
+        window.location.href = '/merchant/dashboard';
       } else {
-        router.push('/register');
+        window.location.href = '/register';
       }
     } else {
-      router.push('/register');
+      window.location.href = '/register';
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
