@@ -83,15 +83,6 @@ export default function Home() {
               <span>🛍️</span>
               <span>開始購物</span>
             </Link>
-            
-            {/* Secondary CTA - Merchant */}
-            <Link
-              href="/login/merchant"
-              className="inline-flex items-center gap-2 px-8 md:px-12 py-4 md:py-5 bg-purple-600 text-white rounded-full text-lg md:text-xl font-bold hover:bg-purple-700 transition shadow-lg"
-            >
-              <span>🏪</span>
-              <span>商戶入駐</span>
-            </Link>
           </div>
         </section>
 
@@ -174,7 +165,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Pricing Section */}
+        {/* Pricing Section - Info only */}
         <section id="pricing" className="py-10 md:py-16 bg-gray-50">
           <div className="max-w-4xl mx-auto px-4">
             <h2 className="text-xl md:text-2xl font-bold mb-6 text-center">定價</h2>
@@ -182,33 +173,15 @@ export default function Home() {
               {/* Merchant Pricing */}
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="text-2xl mb-3">🏪</div>
-                <h3 className="font-bold text-lg mb-2">商戶入駐</h3>
-                <p className="text-gray-600 text-sm mb-4">免費開舖，立即上架</p>
-                <div className="text-2xl font-bold text-purple-600 mb-4">
-                  訂單抽 10%
-                </div>
-                <Link
-                  href="/login/merchant"
-                  className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
-                >
-                  商戶入駐
-                </Link>
+                <h3 className="font-bold text-lg mb-2">商戶</h3>
+                <p className="text-gray-600 text-sm">免費開舖 • 訂單抽 10%</p>
               </div>
               
               {/* Driver Pricing */}
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="text-2xl mb-3">🚚</div>
-                <h3 className="font-bold text-lg mb-2">司機加入</h3>
-                <p className="text-gray-600 text-sm mb-4">免加盟費，自由接單</p>
-                <div className="text-2xl font-bold text-purple-600 mb-4">
-                  每單賺 HK$20-30
-                </div>
-                <Link
-                  href="/login/driver"
-                  className="block w-full py-3 bg-purple-600 text-white rounded-full text-center font-medium hover:bg-purple-700 transition"
-                >
-                  加入司機
-                </Link>
+                <h3 className="font-bold text-lg mb-2">司機</h3>
+                <p className="text-gray-600 text-sm">免加盟費 • 每單 HK$20-30</p>
               </div>
             </div>
           </div>
@@ -228,81 +201,16 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section id="contact" className="py-10 md:py-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-center px-4">
-          <h2 className="text-xl md:text-2xl font-bold mb-3">想開舖？想做司機？</h2>
-          <p className="text-purple-100 mb-5 text-sm md:text-base">加入舖記，一齊賺錢</p>
-          <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4">
-            <Link
-              href="/login/merchant"
-              className="px-5 py-2.5 bg-white text-purple-600 rounded-full font-medium hover:bg-purple-50 text-sm md:text-base"
-            >
-              🏪 商戶入駐
-            </Link>
-            <Link
-              href="/login/driver"
-              className="px-5 py-2.5 bg-white text-blue-600 rounded-full font-medium hover:bg-blue-50 text-sm md:text-base"
-            >
-              🚚 加入司機
-            </Link>
-          </div>
-        </section>
       </main>
 
-      {/* Footer - Business Links Here */}
+      {/* Simple Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8 md:py-10">
-        <div className="max-w-6xl mx-auto px-4">
-          
-          {/* Explicit Login Section */}
-          <div className="bg-gray-800 rounded-xl p-6 md:p-8 mb-8">
-            <h3 className="text-white font-bold text-lg mb-4 text-center">商戶 / 司機登入</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <Link 
-                href="/register" 
-                className="flex items-center justify-center gap-3 py-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium"
-              >
-                <span className="text-xl">🏪</span>
-                <span>商戶入駐 / 登入</span>
-              </Link>
-              <Link 
-                href="/register?role=driver" 
-                className="flex items-center justify-center gap-3 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-              >
-                <span className="text-xl">🚚</span>
-                <span>司機入駐 / 登入</span>
-              </Link>
-            </div>
-            <p className="text-gray-500 text-sm text-center mt-4">
-              顧客登入請點擊右上角「開始購物」
-            </p>
-          </div>
-
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-8">
-            <div className="text-center md:text-left">
-              <div className="text-white font-bold text-lg mb-2">🛒 ShopSagi 舖記</div>
-              <p className="text-sm">香港人既購物平台</p>
-            </div>
-            
-            {/* Business Links - Subtle */}
-            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-              <span className="text-xs text-gray-500">商務合作：</span>
-              <div className="flex gap-4 text-sm">
-                <Link href="/login/merchant" className="hover:text-white transition">
-                  商戶登入
-                </Link>
-                <Link href="/login/driver" className="hover:text-white transition">
-                  司機登入
-                </Link>
-                <Link href="/register" className="hover:text-white transition">
-                  註冊
-                </Link>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-6 pt-6 text-center text-xs text-gray-500">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <div className="text-white font-bold text-lg mb-2">🛒 ShopSagi 舖記</div>
+          <p className="text-sm mb-4">香港人既購物平台</p>
+          <p className="text-xs text-gray-500">
             © 2026 ShopSagi 舖記. All rights reserved.
-          </div>
+          </p>
         </div>
       </footer>
     </div>
