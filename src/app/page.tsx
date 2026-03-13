@@ -45,14 +45,14 @@ export default function Home() {
             <div className="pt-3 border-t space-y-2">
               <p className="text-xs text-gray-500 px-2">商務合作</p>
               <Link 
-                href="/merchant-login" 
+                href="/login/merchant" 
                 className="block py-2 text-gray-600 text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 🏪 商戶登入
               </Link>
               <Link 
-                href="/driver-login" 
+                href="/login/driver" 
                 className="block py-2 text-gray-600 text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -86,7 +86,7 @@ export default function Home() {
             
             {/* Secondary CTA - Merchant */}
             <Link
-              href="/merchant-login"
+              href="/login/merchant"
               className="inline-flex items-center gap-2 px-8 md:px-12 py-4 md:py-5 bg-purple-600 text-white rounded-full text-lg md:text-xl font-bold hover:bg-purple-700 transition shadow-lg"
             >
               <span>🏪</span>
