@@ -2,9 +2,9 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
@@ -17,7 +17,77 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [shopName, setShopName] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Handle redirect result on page load
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      if (!auth || !db) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const user = result.user;
+          // Check if user already exists
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          if (userDoc.exists()) {
+            // User already has a role, redirect accordingly
+            const userData = userDoc.data();
+            if (userData.role === 'customer') {
+              router.push('/customer');
+            } else if (userData.role === 'merchant') {
+              router.push('/merchant/dashboard');
+            } else if (userData.role === 'driver') {
+              router.push('/driver/dashboard');
+            }
+          } else {
+            // New user - save role and redirect
+            await setDoc(doc(db, 'users', user.uid), {
+              email: user.email,
+              role,
+              shopName: role === 'merchant' ? shopName : null,
+              name: user.displayName || null,
+              createdAt: new Date().toISOString(),
+            });
+
+            if (role === 'driver') {
+              await setDoc(doc(db, 'drivers', user.uid), {
+                email: user.email,
+                name: user.displayName || '',
+                todayEarnings: 0,
+                todayCompleted: 0,
+                weekEarnings: 0,
+                totalEarnings: 0,
+                rating: 5.0,
+                createdAt: new Date().toISOString(),
+              });
+            }
+
+            if (role === 'customer') {
+              router.push('/customer');
+            } else if (role === 'merchant') {
+              router.push('/merchant/dashboard');
+            } else {
+              router.push('/driver/dashboard');
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error('Redirect result error:', err);
+        if (err.code !== 'auth/no-auth-event') {
+          setError('登入失敗，請重試');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    handleRedirectResult();
+  }, [role, shopName, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

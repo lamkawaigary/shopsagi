@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,10 +12,49 @@ export default function MerchantLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const isSafari = typeof window !== 'undefined' && 
     /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  // Handle redirect result on page load
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      if (!auth || !db) return;
+      
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const user = result.user;
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.role === 'merchant') {
+              router.push('/merchant/dashboard');
+              return;
+            } else if (userData.role === 'customer') {
+              router.push('/customer');
+              return;
+            } else if (userData.role === 'driver') {
+              router.push('/driver/dashboard');
+              return;
+            }
+          }
+          router.push('/register');
+        }
+      } catch (err: any) {
+        console.error('Redirect result error:', err);
+        if (err.code !== 'auth/no-auth-event') {
+          setError('登入失敗，請重試');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    handleRedirectResult();
+  }, [router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +68,6 @@ export default function MerchantLoginPage() {
     
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      // Verify user is merchant
       const userDoc = await getDoc(doc(db!, 'users', result.user.uid));
       if (userDoc.exists() && userDoc.data().role === 'merchant') {
         router.push('/merchant/dashboard');
@@ -85,7 +123,6 @@ export default function MerchantLoginPage() {
       } else {
         setError(err.message || 'Google登入失敗');
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -110,14 +147,19 @@ export default function MerchantLoginPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        {/* Logo */}
         <div className="text-center mb-6">
-          <Link href="/" className="text-2xl font-bold text-blue-600">
-            🏪 ShopSagi 商戶
-          </Link>
+          <Link href="/" className="text-2xl font-bold text-blue-600">🏪 ShopSagi 商戶</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
@@ -126,9 +168,7 @@ export default function MerchantLoginPage() {
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 value={email}
@@ -140,9 +180,7 @@ export default function MerchantLoginPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                密碼
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">密碼</label>
               <input
                 type="password"
                 value={password}
@@ -153,11 +191,7 @@ export default function MerchantLoginPage() {
               />
             </div>
 
-            {error && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+            {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
 
             <button
               type="submit"
@@ -168,7 +202,6 @@ export default function MerchantLoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
@@ -178,7 +211,6 @@ export default function MerchantLoginPage() {
             </div>
           </div>
 
-          {/* Google Login */}
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -195,13 +227,9 @@ export default function MerchantLoginPage() {
           </button>
         </div>
 
-        {/* Register Link */}
         <div className="text-center mt-6">
           <p className="text-gray-600">
-            未有商戶帳戶？{' '}
-            <Link href="/register" className="text-blue-600 hover:underline font-medium">
-              申請入駐 →
-            </Link>
+            未有商戶帳戶？<Link href="/register" className="text-blue-600 hover:underline font-medium">申請入駐 →</Link>
           </p>
         </div>
       </div>
