@@ -63,9 +63,22 @@ export default function CheckoutPage() {
         });
       }
 
+      // Save order data for confirmation page
+      const orderNumber = `ORD${Date.now()}`;
+      const orderData = {
+        orderId: 'pending',
+        orderNumber,
+        merchantName: Object.values(ordersByMerchant).map((o: any) => o.merchantName).join(', '),
+        items: items,
+        total,
+        customerName: formData.customerName,
+        deliveryAddress: formData.deliveryAddress,
+        createdAt: new Date().toLocaleString('zh-HK'),
+      };
+      sessionStorage.setItem('lastOrder', JSON.stringify(orderData));
+
       clearCart();
-      alert('訂單已送出！');
-      router.push('/customer/orders');
+      router.push('/customer/order-confirmation');
     } catch (error) {
       console.error('Error creating order:', error);
       alert('訂單建立失敗，請再試過');

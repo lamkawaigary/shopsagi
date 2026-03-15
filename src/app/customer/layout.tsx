@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { CartProvider, useCart } from '@/lib/cart';
+import { ToastProvider, useToast } from '@/components/Toast';
 
 function CartIcon() {
   const { itemCount } = useCart();
@@ -71,6 +72,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   return (
     <CartProvider>
+      <ToastProvider>
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white shadow-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -126,6 +128,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
           </div>
         </nav>
       </div>
+      </ToastProvider>
     </CartProvider>
   );
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useCart } from '@/lib/cart';
+import { useToast } from '@/components/Toast';
 
 interface Product {
   id: string;
@@ -30,6 +31,7 @@ export default function CustomerHomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { addItem } = useCart();
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchData();
@@ -87,7 +89,7 @@ export default function CustomerHomePage() {
       merchantName: merchant?.shopName || '商戶',
       imageUrl: product.imageUrl,
     });
-    alert(`已加入購物車：${product.name}`);
+    showToast(`已加入購物車：${product.name}`);
   };
 
   if (loading) {
