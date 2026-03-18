@@ -6,6 +6,7 @@ import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { Store } from 'lucide-react';
 
 export default function MerchantLoginPage() {
   const router = useRouter();
@@ -151,7 +152,7 @@ export default function MerchantLoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-6">
-          <Link href="/" className="text-2xl font-bold text-blue-600">🏪 ShopSagi 商戶</Link>
+          <Link href="/" className="text-2xl font-bold text-blue-600 flex items-center justify-center gap-2"><Store className="w-7 h-7" />ShopSagi 商戶</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
@@ -219,15 +220,10 @@ export default function MerchantLoginPage() {
           </button>
         </div>
 
-        <div className="text-center mt-6 space-y-2">
+        <div className="text-center mt-6">
           <p className="text-gray-800">
             未有商戶帳戶？<Link href="/register" className="text-blue-600 hover:underline font-medium">申請入駐 →</Link>
           </p>
-          <div className="text-sm text-gray-700 pt-2 border-t">
-            <span className="mr-2">用其他身份登入：</span>
-            <Link href="/login/customer" className="text-purple-600 hover:underline mr-3">顧客</Link>
-            <Link href="/login/driver" className="text-green-600 hover:underline">司機</Link>
-          </div>
         </div>
       </div>
     </div>

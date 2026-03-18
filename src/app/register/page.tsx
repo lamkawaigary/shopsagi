@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, Go
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { ShoppingCart, ShoppingBag, Store, Truck } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -285,7 +286,7 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="text-center mb-6">
           <Link href="/" className={`text-2xl font-bold text-${roleColor}-600`}>
-            🛒 ShopSagi 舖記
+            <ShoppingCart className="w-6 h-6"/> ShopSagi 舖記
           </Link>
         </div>
 
@@ -308,7 +309,7 @@ export default function RegisterPage() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="text-2xl mb-1">🛒</div>
+              <ShoppingBag className="w-8 h-8 text-purple-600"/>
               <div className={`text-sm font-medium ${role === 'customer' ? 'text-purple-600' : 'text-gray-800'}`}>
                 顧客
               </div>
@@ -322,7 +323,7 @@ export default function RegisterPage() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="text-2xl mb-1">🏪</div>
+              <Store className="w-8 h-8 text-blue-600"/>
               <div className={`text-sm font-medium ${role === 'merchant' ? 'text-blue-600' : 'text-gray-800'}`}>
                 商戶
               </div>
@@ -336,7 +337,7 @@ export default function RegisterPage() {
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <div className="text-2xl mb-1">🚚</div>
+              <Truck className="w-8 h-8 text-green-600"/>
               <div className={`text-sm font-medium ${role === 'driver' ? 'text-green-600' : 'text-gray-800'}`}>
                 司機
               </div>
@@ -477,7 +478,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Login Links */}
-        <div className="text-center mt-6 space-y-2">
+        <div className="text-center mt-6">
           <p className="text-gray-800">
             已經有帳戶？{' '}
             <Link 
@@ -489,12 +490,6 @@ export default function RegisterPage() {
               登入 →
             </Link>
           </p>
-          <div className="text-sm text-gray-700 pt-2 border-t">
-            <span className="mr-2">其他身份：</span>
-            {role !== 'customer' && <Link href="/login/customer" className="text-purple-600 hover:underline mr-3">顧客登入</Link>}
-            {role !== 'merchant' && <Link href="/login/merchant" className="text-blue-600 hover:underline mr-3">商戶登入</Link>}
-            {role !== 'driver' && <Link href="/login/driver" className="text-green-600 hover:underline">司機登入</Link>}
-          </div>
         </div>
       </div>
     </div>

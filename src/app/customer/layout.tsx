@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { CartProvider, useCart } from '@/lib/cart';
 import { ToastProvider, useToast } from '@/components/Toast';
+import { ShoppingCart, ShoppingBag, User as UserIcon } from 'lucide-react';
 
 function CartIcon() {
   const { itemCount } = useCart();
@@ -77,7 +78,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         <header className="bg-white shadow-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/customer" className="text-xl font-bold text-purple-600">
-              🛒 ShopSagi
+              <ShoppingCart className="w-6 h-6"/> ShopSagi
             </Link>
             <div className="flex items-center gap-4">
               {user ? (
