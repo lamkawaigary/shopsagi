@@ -23,7 +23,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
       setUser(currentUser);
       setLoading(false);
       if (!currentUser) {
-        router.push('/merchant/login');
+        router.push('/login/merchant');
       }
     });
 
@@ -34,7 +34,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
     if (auth) {
       await signOut(auth);
     }
-    router.push('/merchant/login');
+    router.push('/login/merchant');
   };
 
   if (loading) {

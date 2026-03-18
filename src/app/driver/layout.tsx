@@ -23,8 +23,8 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
       setUser(currentUser);
       setLoading(false);
       // Don't redirect if already on login page
-      if (!currentUser && pathname !== '/driver/login') {
-        router.push('/driver/login');
+      if (!currentUser && pathname !== '/login/driver') {
+        router.push('/login/driver');
       }
     });
 
@@ -35,7 +35,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
     if (auth) {
       await signOut(auth);
     }
-    router.push('/driver/login');
+    router.push('/login/driver');
   };
 
   if (loading) {

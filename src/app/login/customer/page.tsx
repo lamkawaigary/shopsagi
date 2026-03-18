@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -12,11 +12,42 @@ export default function CustomerLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is already logged in and redirect if needed
+  useEffect(() => {
+    if (!auth || !db) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Check user's role in database
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role === 'customer') {
+            router.replace('/customer');
+            return;
+          } else if (userData.role === 'merchant') {
+            router.replace('/merchant/dashboard');
+            return;
+          } else if (userData.role === 'driver') {
+            router.replace('/driver/dashboard');
+            return;
+          }
+        }
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
+    if (!auth || !db) {
       setError('系統暫時不可用，請稍後再試');
       return;
     }
@@ -26,14 +57,27 @@ export default function CustomerLoginPage() {
     
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      const userDoc = await getDoc(doc(db!, 'users', result.user.uid));
+      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       
-      if (userDoc.exists() && userDoc.data().role === 'customer') {
-        // Direct redirect - no waiting for auth state
-        window.location.href = '/customer';
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.role === 'customer') {
+          // Success - redirect to customer dashboard
+          window.location.href = '/customer';
+        } else if (userData.role === 'merchant') {
+          window.location.href = '/merchant/dashboard';
+        } else if (userData.role === 'driver') {
+          window.location.href = '/driver/dashboard';
+        } else {
+          // User exists but no role - send to register
+          await auth.signOut();
+          setError('帳戶未設定角色，請重新註冊');
+          setLoading(false);
+        }
       } else {
+        // User doesn't exist in database
         await auth.signOut();
-        setError('呢個帳戶唔係顧客帳戶，請用其他登入方式');
+        setError('呢個帳戶未註冊，請先註冊');
         setLoading(false);
       }
     } catch (err: any) {
@@ -43,7 +87,7 @@ export default function CustomerLoginPage() {
       } else if (err.code === 'auth/invalid-credential') {
         setError('Email或密碼錯誤');
       } else if (err.code === 'auth/user-not-found') {
-        setError('呢個帳戶唔存在');
+        setError('呢個帳戶未註冊，請先註冊');
       } else if (err.code === 'auth/wrong-password') {
         setError('密碼錯誤');
       } else {
@@ -92,12 +136,26 @@ export default function CustomerLoginPage() {
       } else if (userData.role === 'driver') {
         window.location.href = '/driver/dashboard';
       } else {
+        // No role - go to register to select role
         window.location.href = '/register';
       }
     } else {
+      // New user - go to register to select role
       window.location.href = '/register';
     }
   };
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-700">載入緊...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -110,7 +168,7 @@ export default function CustomerLoginPage() {
 
         <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">顧客登入</h1>
-          <p className="text-gray-600 mb-6">用呢個email同密碼登入</p>
+          <p className="text-gray-700 mb-6">用呢個email同密碼登入</p>
 
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
@@ -155,7 +213,7 @@ export default function CustomerLoginPage() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">或</span>
+              <span className="px-2 bg-white text-gray-700">或</span>
             </div>
           </div>
 
@@ -175,11 +233,16 @@ export default function CustomerLoginPage() {
           </button>
         </div>
 
-        <div className="text-center mt-6">
-          <p className="text-gray-600">
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-gray-800">
             未有帳戶？{' '}
-            <Link href="/register" className="text-purple-600 hover:underline font-medium">註冊 →</Link>
+            <Link href="/register" className="text-purple-600 hover:underline font-medium">註冊顧客帳戶 →</Link>
           </p>
+          <div className="text-sm text-gray-700 pt-2 border-t">
+            <span className="mr-2">用其他身份登入：</span>
+            <Link href="/login/merchant" className="text-blue-600 hover:underline mr-3">商戶</Link>
+            <Link href="/login/driver" className="text-green-600 hover:underline">司機</Link>
+          </div>
         </div>
       </div>
     </div>

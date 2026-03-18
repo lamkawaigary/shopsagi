@@ -128,7 +128,7 @@ export default function ShopSettingsPage() {
   }
 
   return (
-    <div>
+    <div className="pb-24">
       <h2 className="text-2xl font-bold mb-6">店鋪設定</h2>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">

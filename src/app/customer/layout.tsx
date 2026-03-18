@@ -51,7 +51,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
-      router.push('/');
+      router.push('/login/customer');
     }
   };
 
