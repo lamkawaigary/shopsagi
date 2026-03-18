@@ -19,7 +19,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
       return;
     }
     
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
       // Don't redirect if already on login page

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { 
   ShoppingCart, Menu, X, ShoppingBag, Store, Truck, 
   Clock, BadgePercent, Star, ChevronRight,
-  Home, Leaf, Shirt, Sparkles, Package
+  Home as HomeIcon, Leaf, Shirt, Sparkles, Package, Utensils
 } from "lucide-react";
 
 export default function Home() {
@@ -101,10 +101,10 @@ export default function Home() {
             <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-center text-gray-900">熱門類別</h2>
             <div className="grid grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
               {[
-                { icon: Soup, name: '美食', color: 'text-orange-500' },
+                { icon: Utensils, name: '美食', color: 'text-orange-500' },
                 { icon: Sparkles, name: '飲品', color: 'text-pink-500' },
                 { icon: Leaf, name: '生鮮', color: 'text-green-500' },
-                { icon: Home, name: '家居', color: 'text-blue-500' },
+                { icon: HomeIcon, name: '家居', color: 'text-blue-500' },
                 { icon: Shirt, name: '服裝', color: 'text-indigo-500' },
                 { icon: Sparkles, name: '美妝', color: 'text-rose-500' },
               ].map((cat) => (

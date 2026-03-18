@@ -45,7 +45,7 @@ export default function DriverDashboardPage() {
       return;
     }
     
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         // Check if user is driver

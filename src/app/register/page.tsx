@@ -29,10 +29,10 @@ export default function RegisterPage() {
         return;
       }
 
-      unsubscribe = onAuthStateChanged(auth, async (user) => {
+      unsubscribe = onAuthStateChanged(auth!, async (user) => {
         setCurrentUser(user);
         
-        if (user) {
+        if (user && db) {
           // Check if user already has a role in database
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           

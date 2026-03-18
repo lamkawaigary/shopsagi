@@ -27,7 +27,7 @@ export default function DriverProfilePage() {
       return;
     }
     
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         const userDoc = await getDoc(doc(db!, 'users', currentUser.uid));

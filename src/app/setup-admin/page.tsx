@@ -12,7 +12,7 @@ export default function SetupAdminPage() {
   const [emailToAdmin, setEmailToAdmin] = useState('');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });

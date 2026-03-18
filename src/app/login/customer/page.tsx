@@ -21,8 +21,8 @@ export default function CustomerLoginPage() {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth!, async (user) => {
+      if (user && db) {
         // Check user's role in database
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
