@@ -62,7 +62,7 @@ export default function CustomerProfilePage() {
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-2xl">
-            👤
+            <div className="text-4xl">用戶</div>
           </div>
           <div>
             <h2 className="text-xl font-bold">{profile?.name || '顧客'}</h2>
@@ -81,7 +81,7 @@ export default function CustomerProfilePage() {
           className="w-full flex justify-between items-center p-4 hover:bg-gray-50"
         >
           <span className="flex items-center gap-3">
-            <span>📋</span>
+            <span>訂單</span>
             <span>我的訂單</span>
           </span>
           <span className="text-gray-400">→</span>
@@ -103,7 +103,7 @@ export default function CustomerProfilePage() {
           className="w-full flex justify-between items-center p-4 hover:bg-gray-50"
         >
           <span className="flex items-center gap-3">
-            <span>💳</span>
+            <span>支付</span>
             <span>付款方式</span>
           </span>
           <span className="text-gray-400">→</span>

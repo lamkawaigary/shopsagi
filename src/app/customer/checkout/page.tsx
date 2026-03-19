@@ -90,7 +90,7 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-5xl mb-4">🛒</div>
+        <div className="text-4xl mb-4">購物車</div>
         <h2 className="text-xl font-bold mb-2">購物車係咁</h2>
         <Link href="/customer" className="text-purple-600 hover:underline">
           去shopping

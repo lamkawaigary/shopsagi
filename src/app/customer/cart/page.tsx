@@ -11,7 +11,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-5xl mb-4">🛒</div>
+        <div className="text-4xl mb-4">購物車</div>
         <h2 className="text-xl font-bold mb-2">購物車係咁</h2>
         <p className="text-gray-500 mb-6">去shopping啦</p>
         <Link
@@ -49,7 +49,7 @@ export default function CartPage() {
         {Object.entries(itemsByMerchant).map(([merchantName, merchantItems]) => (
           <div key={merchantName} className="bg-white rounded-xl shadow-sm p-4">
             <div className="font-semibold mb-3 pb-2 border-b">
-              🏪 {merchantName}
+              商戶: {merchantName}
             </div>
             <div className="space-y-3">
               {merchantItems.map((item) => (

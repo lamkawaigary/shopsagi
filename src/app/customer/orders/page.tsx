@@ -100,7 +100,7 @@ export default function CustomerOrdersPage() {
 
       {orders.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-4xl mb-4">📋</div>
+          <div className="text-3xl mb-4">訂單</div>
           <h3 className="text-lg font-semibold mb-2">暫時未有訂單</h3>
           <p className="text-gray-500 mb-4">去shopping啦</p>
           <Link
@@ -120,7 +120,7 @@ export default function CustomerOrdersPage() {
                   <div className="text-sm text-gray-500">
                     {order.createdAt?.toDate?.()?.toLocaleString('zh-HK') || ''}
                   </div>
-                  <div className="text-sm text-gray-500">🏪 {order.merchantName}</div>
+                  <div className="text-sm text-gray-500">商戶: {order.merchantName}</div>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(order.status)}`}>
                   {getStatusText(order.status)}
