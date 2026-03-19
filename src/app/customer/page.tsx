@@ -147,7 +147,7 @@ export default function CustomerHomePage() {
                   {merchant.logoUrl ? (
                     <img src={merchant.logoUrl} alt={merchant.shopName} className="w-full h-full object-cover rounded-full" />
                   ) : (
-                    <span className="text-xl md:text-2xl">🏪</span>
+                    <span className="text-xl md:text-2xl">商</span>
                   )}
                 </div>
                 <div className="text-center font-medium text-sm md:text-base">{merchant.shopName}</div>
@@ -182,7 +182,7 @@ export default function CustomerHomePage() {
                     {product.imageUrl ? (
                       <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-2xl md:text-3xl">📦</span>
+                      <span className="text-2xl md:text-3xl">貨</span>
                     )}
                   </div>
                   <div className="p-2.5 md:p-3">

@@ -21,7 +21,7 @@ export default function SetupAdminPage() {
 
   const makeMeAdmin = async () => {
     if (!user || !db) {
-      setResult('❌ Please login first');
+      setResult('ERR Please login first');
       return;
     }
 
@@ -31,15 +31,15 @@ export default function SetupAdminPage() {
         role: 'admin',
         createdAt: new Date(),
       }, { merge: true });
-      setResult('✅ You are now an admin!');
+      setResult('OK You are now an admin!');
     } catch (error) {
-      setResult('❌ Error: ' + (error as Error).message);
+      setResult('ERR Error: ' + (error as Error).message);
     }
   };
 
   const makeEmailAdmin = async () => {
     if (!emailToAdmin || !db) {
-      setResult('❌ Please enter an email');
+      setResult('ERR Please enter an email');
       return;
     }
 
@@ -48,7 +48,7 @@ export default function SetupAdminPage() {
       // For now, we'll just show the email to add manually
       setResult(`📧 Please provide the user ID for ${emailToAdmin} or login with that account first`);
     } catch (error) {
-      setResult('❌ Error: ' + (error as Error).message);
+      setResult('ERR Error: ' + (error as Error).message);
     }
   };
 
@@ -75,7 +75,7 @@ export default function SetupAdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold mb-2">⚙️ Admin Setup</h1>
+        <h1 className="text-2xl font-bold mb-2">Admin Setup</h1>
         <p className="text-gray-600 mb-6">Current user: {user.email}</p>
 
         <button
@@ -87,8 +87,8 @@ export default function SetupAdminPage() {
 
         {result && (
           <div className={`p-3 rounded-lg text-center mb-4 ${
-            result.includes('✅') ? 'bg-green-100 text-green-700' :
-            result.includes('❌') ? 'bg-red-100 text-red-700' :
+            result.includes('OK') ? 'bg-green-100 text-green-700' :
+            result.includes('ERR') ? 'bg-red-100 text-red-700' :
             'bg-gray-100 text-gray-700'
           }`}>
             {result}

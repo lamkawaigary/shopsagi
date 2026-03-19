@@ -61,7 +61,7 @@ export default function OrderConfirmationPage() {
     <div>
       {/* Success Header */}
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">✅</div>
+        <div className="text-6xl mb-4">✓</div>
         <h1 className="text-2xl font-bold text-green-600 mb-2">訂單已確認！</h1>
         <p className="text-gray-600">多謝你既訂單，我哋會盡快安排配送</p>
       </div>

@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-2xl mb-4">
-            <span className="text-3xl">⚙️</span>
+            <span className="text-3xl">設定</span>
           </div>
           <h1 className="text-3xl font-bold text-white">Admin Portal</h1>
           <p className="text-gray-400 mt-2">ShopSagi 管理后台</p>

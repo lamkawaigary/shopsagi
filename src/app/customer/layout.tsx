@@ -17,7 +17,7 @@ function CartIcon() {
       className="flex flex-col items-center justify-center flex-1 py-2"
     >
       <span className="text-xl relative">
-        🛒
+        
         {itemCount > 0 && (
           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
             {itemCount > 9 ? '9+' : itemCount}
@@ -68,7 +68,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     { href: '/customer', label: '首頁', icon: '🏡' },
     { href: '/customer/cart', label: '購物車', icon: '🛍', component: CartIcon },
     { href: '/customer/orders', label: '訂單', icon: '📄' },
-    { href: '/customer/profile', label: '我的', icon: '👤' },
+    { href: '/customer/profile', label: '我的', icon: '我' },
   ];
 
   return (

@@ -166,7 +166,7 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h2 className="text-xl md:text-2xl font-bold">
-              {profile?.shopName ? `🏪 ${profile.shopName}` : '商戶控制台'}
+              {profile?.shopName ? `商戶: ${profile.shopName}` : '商戶控制台'}
             </h2>
             <p className="text-gray-600 text-sm mt-1">{profile?.email || user?.email}</p>
           </div>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
             href="/merchant/shop"
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
           >
-            ⚙️ 設定
+            設定
           </Link>
         </div>
       </div>
@@ -214,14 +214,14 @@ export default function DashboardPage() {
           href="/merchant/orders"
           className="bg-white border rounded-xl p-3 md:p-6 hover:bg-gray-50 transition text-center"
         >
-          <div className="text-xl md:text-2xl mb-1 md:mb-2">📋</div>
+          <div className="text-xl md:text-2xl mb-1 md:mb-2">訂</div>
           <div className="font-semibold text-gray-900 text-sm md:text-base">查看訂單</div>
         </Link>
         <Link
           href="/merchant/shop"
           className="bg-white border rounded-xl p-3 md:p-6 hover:bg-gray-50 transition text-center"
         >
-          <div className="text-xl md:text-2xl mb-1 md:mb-2">⚙️</div>
+          <div className="text-xl md:text-2xl mb-1 md:mb-2">設</div>
           <div className="font-semibold text-gray-900 text-sm md:text-base">店鋪設定</div>
         </Link>
       </div>

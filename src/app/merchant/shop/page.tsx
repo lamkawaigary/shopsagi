@@ -146,7 +146,7 @@ export default function ShopSettingsPage() {
               ) : shopData.logoUrl ? (
                 <img src={shopData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-3xl">🏪</span>
+                <span className="text-3xl">商</span>
               )}
             </div>
             <label className="cursor-pointer">

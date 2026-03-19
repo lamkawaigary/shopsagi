@@ -315,7 +315,7 @@ export default function DriverDashboardPage() {
                 
                 <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
                   <div className="flex items-start gap-2 md:gap-3">
-                    <div className="text-green-600 mt-0.5">📍</div>
+                    <div className="text-green-600 mt-0.5">📌</div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs md:text-sm text-gray-500">取餐地點</div>
                       <div className="text-sm md:text-base truncate">{order.pickupAddress}</div>
@@ -367,7 +367,7 @@ export default function DriverDashboardPage() {
                 
                 <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
                   <div className="flex items-start gap-2 md:gap-3">
-                    <div className="text-green-600 mt-0.5">📍</div>
+                    <div className="text-green-600 mt-0.5">📌</div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs md:text-sm text-gray-500">取餐地點</div>
                       <div className="text-sm md:text-base truncate">{order.pickupAddress}</div>

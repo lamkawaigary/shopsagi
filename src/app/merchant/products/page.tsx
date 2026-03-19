@@ -125,7 +125,7 @@ export default function ProductsPage() {
       {/* Products Grid */}
       {filteredProducts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-4xl mb-4">📦</div>
+          <div className="text-4xl mb-4">貨</div>
           <h3 className="text-lg font-semibold mb-2">暫時未有商品</h3>
           <p className="text-gray-500 mb-4">建立你既第一件商品開始銷售</p>
           <Link

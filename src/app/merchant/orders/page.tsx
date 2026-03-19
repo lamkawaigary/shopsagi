@@ -135,7 +135,7 @@ export default function OrdersPage() {
       {/* Orders List */}
       {filteredOrders.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-4xl mb-4">📋</div>
+          <div className="text-4xl mb-4">訂</div>
           <h3 className="text-lg font-semibold mb-2">暫時未有訂單</h3>
           <p className="text-gray-500">當客戶落單後會顯示呢度</p>
         </div>

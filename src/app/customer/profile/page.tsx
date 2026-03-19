@@ -92,7 +92,7 @@ export default function CustomerProfilePage() {
           className="w-full flex justify-between items-center p-4 hover:bg-gray-50"
         >
           <span className="flex items-center gap-3">
-            <span>📍</span>
+            <span>地址</span>
             <span>我的地址</span>
           </span>
           <span className="text-gray-400">→</span>

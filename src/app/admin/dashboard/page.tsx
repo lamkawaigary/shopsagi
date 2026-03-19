@@ -34,10 +34,10 @@ export default function AdminDashboardPage() {
   }
 
   const stats = [
-    { label: '總商戶', value: '24', icon: '🏪', color: 'bg-blue-500' },
-    { label: '總顧客', value: '1,234', icon: '🛒', color: 'bg-green-500' },
-    { label: '總司機', value: '56', icon: '🚚', color: 'bg-orange-500' },
-    { label: '總訂單', value: '3,891', icon: '📦', color: 'bg-purple-500' },
+    { label: '總商戶', value: '24', icon: '商', color: 'bg-blue-500' },
+    { label: '總顧客', value: '1,234', icon: '客', color: 'bg-green-500' },
+    { label: '總司機', value: '56', icon: '司', color: 'bg-orange-500' },
+    { label: '總訂單', value: '3,891', icon: '單', color: 'bg-purple-500' },
   ];
 
   const recentOrders = [
@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">⚙️</span>
+            <span className="text-2xl">設定</span>
             <h1 className="text-xl font-bold">ShopSagi 管理后台</h1>
           </div>
           <div className="flex items-center gap-4">
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
             href="/admin/merchants"
             className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition border-2 border-transparent hover:border-blue-500"
           >
-            <div className="text-3xl mb-3">🏪</div>
+            <div className="text-3xl mb-3">商</div>
             <h3 className="font-semibold text-lg mb-1">商戶管理</h3>
             <p className="text-gray-500 text-sm">查看、管理入駐商戶</p>
           </Link>
@@ -99,7 +99,7 @@ export default function AdminDashboardPage() {
             href="/admin/drivers"
             className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition border-2 border-transparent hover:border-orange-500"
           >
-            <div className="text-3xl mb-3">🚚</div>
+            <div className="text-3xl mb-3">司</div>
             <h3 className="font-semibold text-lg mb-1">司機管理</h3>
             <p className="text-gray-500 text-sm">查看、管理配送司機</p>
           </Link>
@@ -107,7 +107,7 @@ export default function AdminDashboardPage() {
             href="/admin/orders"
             className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition border-2 border-transparent hover:border-purple-500"
           >
-            <div className="text-3xl mb-3">📦</div>
+            <div className="text-3xl mb-3">單</div>
             <h3 className="font-semibold text-lg mb-1">訂單管理</h3>
             <p className="text-gray-500 text-sm">查看所有平台訂單</p>
           </Link>

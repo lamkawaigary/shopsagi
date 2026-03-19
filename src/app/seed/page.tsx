@@ -97,10 +97,10 @@ export default function SeedPage() {
       });
       setResult('Created: driver 陳大文');
 
-      setResult('✅ Seed completed! 2 merchants, 8 products, 1 driver');
+      setResult('OK Seed completed! 2 merchants, 8 products, 1 driver');
     } catch (error) {
       console.error('Seed error:', error);
-      setResult('❌ Error: ' + (error as Error).message);
+      setResult('ERR Error: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -131,8 +131,8 @@ export default function SeedPage() {
 
         {result && (
           <div className={`mt-4 p-3 rounded-lg text-center ${
-            result.includes('✅') ? 'bg-green-100 text-green-700' :
-            result.includes('❌') ? 'bg-red-100 text-red-700' :
+            result.includes('OK') ? 'bg-green-100 text-green-700' :
+            result.includes('ERR') ? 'bg-red-100 text-red-700' :
             'bg-gray-100 text-gray-700'
           }`}>
             {result}

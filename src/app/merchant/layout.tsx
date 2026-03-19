@@ -49,9 +49,9 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
 
   const navItems = [
     { href: '/merchant/dashboard', label: '控制台', icon: '📊' },
-    { href: '/merchant/products', label: '商品', icon: '📦' },
-    { href: '/merchant/orders', label: '訂單', icon: '📋' },
-    { href: '/merchant/shop', label: '設定', icon: '⚙️' },
+    { href: '/merchant/products', label: '商品', icon: '商' },
+    { href: '/merchant/orders', label: '訂單', icon: '訂' },
+    { href: '/merchant/shop', label: '設定', icon: '設' },
   ];
 
   return (
