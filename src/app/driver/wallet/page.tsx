@@ -140,7 +140,7 @@ export default function DriverWalletPage() {
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'earning': return '💰';
+      case 'earning': return '收入';
       case 'withdrawal': return '🏦';
       case 'bonus': return '🎁';
       default: return '💳';
@@ -195,7 +195,7 @@ export default function DriverWalletPage() {
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="text-gray-600">客戶評分</div>
-          <div className="text-2xl font-bold text-yellow-600">{wallet.rating.toFixed(1)} ⭐</div>
+          <div className="text-2xl font-bold text-yellow-600">{wallet.rating.toFixed(1)}</div>
         </div>
       </div>
 

@@ -100,7 +100,7 @@ export default function DriverProfilePage() {
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-2xl">
-            🚚
+            <div className="text-4xl">司機</div>
           </div>
           <div>
             <h2 className="text-xl font-bold">{name || '司機'}</h2>
@@ -182,7 +182,7 @@ export default function DriverProfilePage() {
           </div>
 
           {message && (
-            <div className={`p-3 rounded-lg ${message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div className={`p-3 rounded-lg ${message.includes('✓') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
               {message}
             </div>
           )}
