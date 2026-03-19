@@ -77,10 +77,10 @@ export default function DriverProfilePage() {
         updatedAt: new Date().toISOString(),
       });
       
-      setMessage('✅ 資料已更新');
+      setMessage('資料已更新 ✓');
     } catch (error) {
       console.error('Error updating profile:', error);
-      setMessage('❌ 更新失敗，請再試過');
+      setMessage('更新失敗 ✗，請再試過');
     } finally {
       setSaving(false);
     }
@@ -206,7 +206,7 @@ export default function DriverProfilePage() {
             onClick={() => alert('通知設定即將推出！')}
             className="w-full flex justify-between items-center py-3 border-b hover:bg-gray-50"
           >
-            <span>🔔 通知設定</span>
+            <span>通知設定</span>
             <span className="text-gray-400">→</span>
           </button>
           
