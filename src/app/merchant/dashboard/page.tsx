@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { FileText, Settings } from 'lucide-react';
 
 interface DashboardStats {
   totalOrders: number;
@@ -214,14 +215,14 @@ export default function DashboardPage() {
           href="/merchant/orders"
           className="bg-white border rounded-xl p-3 md:p-6 hover:bg-gray-50 transition text-center"
         >
-          <div className="text-xl md:text-2xl mb-1 md:mb-2">訂</div>
+          <div className="text-xl md:text-2xl mb-1 md:mb-2"><FileText className="w-6 h-6 mx-auto text-blue-600" /></div>
           <div className="font-semibold text-gray-900 text-sm md:text-base">查看訂單</div>
         </Link>
         <Link
           href="/merchant/shop"
           className="bg-white border rounded-xl p-3 md:p-6 hover:bg-gray-50 transition text-center"
         >
-          <div className="text-xl md:text-2xl mb-1 md:mb-2">設</div>
+          <div className="text-xl md:text-2xl mb-1 md:mb-2"><Settings className="w-6 h-6 mx-auto text-gray-600" /></div>
           <div className="font-semibold text-gray-900 text-sm md:text-base">店鋪設定</div>
         </Link>
       </div>
