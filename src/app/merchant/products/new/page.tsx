@@ -6,6 +6,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth } from '@/lib/firebase';
+import { Save } from 'lucide-react';
 
 const CATEGORIES = [
   '食品',
@@ -198,7 +199,12 @@ export default function NewProductPage() {
               disabled={loading || uploading}
               className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading || uploading ? '儲存中...' : '儲存商品'}
+              {loading || uploading ? '儲存中...' : (
+                <>
+                  <Save className="w-5 h-5 inline mr-1" />
+                  儲存商品
+                </>
+              )}
             </button>
           </div>
         </form>

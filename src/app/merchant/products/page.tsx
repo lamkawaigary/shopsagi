@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'fi
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -99,7 +100,7 @@ export default function ProductsPage() {
           href="/merchant/products/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
-          ➕ 新增商品
+          <Plus className="w-5 h-5" /> 新增商品
         </Link>
       </div>
 
@@ -163,9 +164,9 @@ export default function ProductsPage() {
                 <div className="flex gap-2 mt-4">
                   <Link
                     href={`/merchant/products/${product.id}`}
-                    className="flex-1 text-center bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 text-sm"
+                    className="flex-1 text-center bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 text-sm flex items-center justify-center gap-1"
                   >
-                    編輯
+                    <Pencil className="w-4 h-4" /> 編輯
                   </Link>
                   <button
                     onClick={() => handleToggleStatus(product)}
@@ -175,9 +176,9 @@ export default function ProductsPage() {
                   </button>
                   <button
                     onClick={() => handleDelete(product.id)}
-                    className="flex-1 text-center bg-red-50 text-red-600 py-2 rounded-lg hover:bg-red-100 text-sm"
+                    className="flex-1 text-center bg-red-50 text-red-600 py-2 rounded-lg hover:bg-red-100 text-sm flex items-center justify-center gap-1"
                   >
-                    刪除
+                    <Trash2 className="w-4 h-4" /> 刪除
                   </button>
                 </div>
               </div>
