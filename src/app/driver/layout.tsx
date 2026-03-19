@@ -65,7 +65,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
             className="p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <span className="text-xl">{mobileMenuOpen ? '✕' : '☰'}</span>
+            <span className="text-xl">{mobileMenuOpen ? 'Close' : 'Menu'}</span>
           </button>
         </div>
 

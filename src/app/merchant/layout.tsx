@@ -64,7 +64,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
             className="p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <span className="text-xl">{mobileMenuOpen ? '✕' : '☰'}</span>
+            <span className="text-xl">{mobileMenuOpen ? 'X' : 'Menu'}</span>
           </button>
         </div>
 
