@@ -199,7 +199,7 @@ export default function DriverOrdersPage() {
       {/* Orders List */}
       {filteredOrders.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-          <div className="text-4xl mb-3">📋</div>
+          <div className="text-3xl mb-3">訂單</div>
           <h3 className="text-lg font-semibold mb-2">暫時未有訂單</h3>
         </div>
       ) : (
@@ -220,7 +220,7 @@ export default function DriverOrdersPage() {
               </div>
               
               <div className="text-sm text-gray-500 mb-2">
-                📍 {order.pickupAddress} → 🏠 {order.deliveryAddress}
+                地點: {order.pickupAddress} →  {order.deliveryAddress}
               </div>
               
               <div className="text-xs text-gray-400">
