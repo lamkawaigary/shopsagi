@@ -165,7 +165,7 @@ export default function DriverWalletPage() {
           className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50"
           onClick={() => alert('提現功能即將推出！')}
         >
-          💳 申請提現
+          申請提現
         </button>
       </div>
 
@@ -204,7 +204,7 @@ export default function DriverWalletPage() {
         <h3 className="font-bold text-lg mb-4">最近交易</h3>
         {transactions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <div className="text-3xl mb-2">📊</div>
+            <div className="text-2xl mb-2">統計</div>
             暫時未有交易記錄
           </div>
         ) : (
