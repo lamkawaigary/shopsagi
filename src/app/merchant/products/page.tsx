@@ -6,7 +6,10 @@ import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'fi
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Scan } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 interface Product {
   id: string;
@@ -24,6 +27,21 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleBarcodeScan = (barcode: string) => {
+    setShowScanner(false);
+    // Filter products by barcode or name
+    const filtered = products.filter(p => 
+      p.name.toLowerCase().includes(barcode.toLowerCase()) ||
+      (p as any).barcode?.includes(barcode)
+    );
+    if (filtered.length > 0) {
+      setProducts(filtered);
+    } else {
+      alert('找不到相關商品');
+    }
+  };
 
   useEffect(() => {
     if (!auth) {
@@ -96,12 +114,20 @@ export default function ProductsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">商品管理</h2>
-        <Link
-          href="/merchant/products/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          <Plus className="w-5 h-5" /> 新增商品
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowScanner(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-1"
+          >
+            <Scan className="w-5 h-5" /> 掃描
+          </button>
+          <Link
+            href="/merchant/products/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1"
+          >
+            <Plus className="w-5 h-5" /> 新增商品
+          </Link>
+        </div>
       </div>
 
       {/* Filter */}
@@ -186,6 +212,8 @@ export default function ProductsPage() {
           ))}
         </div>
       )}
+      
+      {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
     </div>
   );
 }

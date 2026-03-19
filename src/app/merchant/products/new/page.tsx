@@ -26,6 +26,7 @@ export default function NewProductPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
+    barcode: '' ,
     name: '',
     description: '',
     price: '',
@@ -57,6 +58,7 @@ export default function NewProductPage() {
         merchantId: auth.currentUser.uid,
         name: formData.name,
         description: formData.description,
+        barcode: formData.barcode || null,
         price: parseFloat(formData.price),
         category: formData.category,
         imageUrl,
@@ -135,6 +137,20 @@ export default function NewProductPage() {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="例如：港式奶茶"
               required
+            />
+          </div>
+
+          {/* Barcode */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              條碼 / 商品編號
+            </label>
+            <input
+              type="text"
+              value={formData.barcode}
+              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="例如：4891234567890"
             />
           </div>
 
