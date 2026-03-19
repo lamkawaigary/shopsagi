@@ -294,7 +294,7 @@ export default function DriverDashboardPage() {
       {activeTab === 'available' ? (
         availableOrders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 md:p-12 text-center">
-            <div className="text-3xl md:text-4xl mb-3 md:mb-4">📭</div>
+            <div className="text-3xl md:text-4xl mb-3 md:mb-4">EMPTY</div>
             <h3 className="text-base md:text-lg font-semibold mb-2">暫時未有可搶既訂單</h3>
             <p className="text-gray-500 text-sm md:text-base">有單既話會顯示呢度</p>
           </div>
@@ -315,7 +315,7 @@ export default function DriverDashboardPage() {
                 
                 <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
                   <div className="flex items-start gap-2 md:gap-3">
-                    <div className="text-green-600 mt-0.5">📌</div>
+                    <div className="text-green-600 mt-0.5">地</div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs md:text-sm text-gray-500">取餐地點</div>
                       <div className="text-sm md:text-base truncate">{order.pickupAddress}</div>
@@ -367,7 +367,7 @@ export default function DriverDashboardPage() {
                 
                 <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
                   <div className="flex items-start gap-2 md:gap-3">
-                    <div className="text-green-600 mt-0.5">📌</div>
+                    <div className="text-green-600 mt-0.5">地</div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs md:text-sm text-gray-500">取餐地點</div>
                       <div className="text-sm md:text-base truncate">{order.pickupAddress}</div>
