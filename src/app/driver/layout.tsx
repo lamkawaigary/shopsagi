@@ -49,10 +49,10 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
   if (!user) return null;
 
   const navItems = [
-    { href: '/driver/dashboard', label: '接單', icon: '🚀' },
-    { href: '/driver/orders', label: '訂單', icon: '📋' },
-    { href: '/driver/wallet', label: '收入', icon: '💰' },
-    { href: '/driver/profile', label: '設定', icon: '⚙️' },
+    { href: '/driver/dashboard', label: '接單', icon: '⚡' },
+    { href: '/driver/orders', label: '訂單', icon: '📄' },
+    { href: '/driver/wallet', label: '收入', icon: '💵' },
+    { href: '/driver/profile', label: '設定', icon: '⚙' },
   ];
 
   return (
