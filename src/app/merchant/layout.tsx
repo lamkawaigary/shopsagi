@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart3, Package, FileText, Settings } from 'lucide-react';
+import { BarChart3, Package, FileText, Settings, Menu, X } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -65,7 +65,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
             className="p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <span className="text-xl">{mobileMenuOpen ? 'X' : 'Menu'}</span>
+            <span className="text-xl">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</span>
           </button>
         </div>
 

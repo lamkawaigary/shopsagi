@@ -5,7 +5,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Zap, FileText, DollarSign, User as UserIcon } from 'lucide-react';
+import { Zap, FileText, DollarSign, User as UserIcon, Menu, X } from 'lucide-react';
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -66,7 +66,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
             className="p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <span className="text-xl">{mobileMenuOpen ? 'Close' : 'Menu'}</span>
+            <span className="text-xl">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</span>
           </button>
         </div>
 
