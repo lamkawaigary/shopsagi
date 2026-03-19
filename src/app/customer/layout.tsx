@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { CartProvider, useCart } from '@/lib/cart';
 import { ToastProvider, useToast } from '@/components/Toast';
-import { ShoppingCart, ShoppingBag, User as UserIcon } from 'lucide-react';
+import { ShoppingCart, ShoppingBag, User as UserIcon, Home, FileText } from 'lucide-react';
 
 function CartIcon() {
   const { itemCount } = useCart();
@@ -65,10 +65,10 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   }
 
   const navItems = [
-    { href: '/customer', label: '首頁', icon: 'H' },
-    { href: '/customer/cart', label: '購物車', icon: 'C', component: CartIcon },
-    { href: '/customer/orders', label: '訂單', icon: 'O' },
-    { href: '/customer/profile', label: '我的', icon: 'M' },
+    { href: '/customer', label: '首頁', icon: Home },
+    { href: '/customer/cart', label: '購物車', icon: ShoppingCart },
+    { href: '/customer/orders', label: '訂單', icon: FileText },
+    { href: '/customer/profile', label: '我的', icon: UserIcon },
   ];
 
   return (
@@ -109,10 +109,8 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden z-50">
           <div className="flex justify-around items-center h-16">
             {navItems.map((item) => {
-              if (item.component) {
-                return <item.component key={item.href} />;
-              }
               const isActive = pathname === item.href;
+              const IconComp = item.icon;
               return (
                 <Link
                   key={item.href}
@@ -121,7 +119,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
                     isActive ? 'text-purple-600' : 'text-gray-500'
                   }`}
                 >
-                  <span className="text-xl">{item.icon}</span>
+                  {IconComp && <IconComp className="w-5 h-5" />}
                   <span className="text-xs mt-1">{item.label}</span>
                 </Link>
               );

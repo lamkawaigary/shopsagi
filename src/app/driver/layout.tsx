@@ -5,6 +5,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Zap, FileText, DollarSign, User as UserIcon } from 'lucide-react';
 
 export default function DriverLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -49,10 +50,10 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
   if (!user) return null;
 
   const navItems = [
-    { href: '/driver/dashboard', label: '接單', icon: 'A' },
-    { href: '/driver/orders', label: '訂單', icon: 'O' },
-    { href: '/driver/wallet', label: '收入', icon: 'W' },
-    { href: '/driver/profile', label: '設定', icon: 'S' },
+    { href: '/driver/dashboard', label: '接單', icon: Zap },
+    { href: '/driver/orders', label: '訂單', icon: FileText },
+    { href: '/driver/wallet', label: '收入', icon: DollarSign },
+    { href: '/driver/profile', label: '設定', icon: UserIcon },
   ];
 
   return (
@@ -83,7 +84,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {item.icon} {item.label}
+                {item.icon && <item.icon className="w-5 h-5" />} {item.label}
               </Link>
             ))}
             <button
@@ -149,7 +150,7 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
                   isActive ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
-                <span className="text-lg">{item.icon}</span>
+                {item.icon && <item.icon className="w-5 h-5" />}
                 <span className="text-xs mt-0.5">{item.label}</span>
               </Link>
             );

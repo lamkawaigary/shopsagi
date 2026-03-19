@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BarChart3, Package, FileText, Settings } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -48,10 +49,10 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
   if (!user) return null;
 
   const navItems = [
-    { href: '/merchant/dashboard', label: '控制台', icon: 'D' },
-    { href: '/merchant/products', label: '商品', icon: 'P' },
-    { href: '/merchant/orders', label: '訂單', icon: 'O' },
-    { href: '/merchant/shop', label: '設定', icon: 'S' },
+    { href: '/merchant/dashboard', label: '控制台', icon: BarChart3 },
+    { href: '/merchant/products', label: '商品', icon: Package },
+    { href: '/merchant/orders', label: '訂單', icon: FileText },
+    { href: '/merchant/shop', label: '設定', icon: Settings },
   ];
 
   return (
@@ -82,7 +83,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {item.icon} {item.label}
+                {item.icon && <item.icon className="w-5 h-5" />} {item.label}
               </Link>
             ))}
             <button
@@ -148,7 +149,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
                   isActive ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
-                <span className="text-lg">{item.icon}</span>
+                {item.icon && <item.icon className="w-5 h-5" />}
                 <span className="text-xs mt-0.5">{item.label}</span>
               </Link>
             );
