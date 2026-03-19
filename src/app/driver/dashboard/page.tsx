@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, orderBy, limit, doc, updateDoc, getD
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { Truck, Star, Rocket, FileText, Home, MapPin, Phone, Check, Package, Zap } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -235,7 +236,7 @@ export default function DriverDashboardPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h2 className="text-xl md:text-2xl font-bold">
-              🚚 司機控制台
+              司機控制台
             </h2>
             <p className="text-gray-600 text-sm mt-1">{profile?.email || user?.email}</p>
           </div>
@@ -261,7 +262,7 @@ export default function DriverDashboardPage() {
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
           <div className="text-sm text-gray-600 mb-1">評分</div>
-          <div className="text-xl md:text-3xl font-bold text-yellow-600">{stats.rating.toFixed(1)} ⭐</div>
+          <div className="text-xl md:text-3xl font-bold text-yellow-600">{stats.rating.toFixed(1)}</div>
         </div>
       </div>
 
@@ -275,7 +276,7 @@ export default function DriverDashboardPage() {
               : 'bg-white text-gray-600 hover:bg-gray-50 border'
           }`}
         >
-          🚀 可搶訂單 ({availableOrders.length})
+          可搶訂單 ({availableOrders.length})
         </button>
         <button
           onClick={() => setActiveTab('my')}
@@ -285,7 +286,7 @@ export default function DriverDashboardPage() {
               : 'bg-white text-gray-600 hover:bg-gray-50 border'
           }`}
         >
-          📋 我的訂單 ({myOrders.length})
+          我的訂單 ({myOrders.length})
         </button>
       </div>
 
@@ -321,7 +322,7 @@ export default function DriverDashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-start gap-2 md:gap-3 mt-2 md:mt-3">
-                    <div className="text-red-600 mt-0.5">🏠</div>
+                    <Home className="w-4 h-4 text-red-600"/>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs md:text-sm text-gray-500">送餐地址</div>
                       <div className="text-sm md:text-base truncate">{order.deliveryAddress}</div>
@@ -334,7 +335,7 @@ export default function DriverDashboardPage() {
                   disabled={actionLoading === order.id}
                   className="w-full bg-green-600 text-white py-2.5 md:py-3 rounded-lg hover:bg-green-700 font-medium text-sm md:text-base disabled:opacity-50"
                 >
-                  {actionLoading === order.id ? '處理中...' : '🚀 搶單'}
+                  {actionLoading === order.id ? '處理中...' : '搶單'}
                 </button>
               </div>
             ))}
@@ -343,7 +344,7 @@ export default function DriverDashboardPage() {
       ) : (
         myOrders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 md:p-12 text-center">
-            <div className="text-3xl md:text-4xl mb-3 md:mb-4">📋</div>
+            <FileText className="w-10 h-10"/>
             <h3 className="text-base md:text-lg font-semibold mb-2">暫時未有進行中既訂單</h3>
             <p className="text-gray-500 text-sm md:text-base">搶單後會顯示呢度</p>
           </div>
@@ -373,7 +374,7 @@ export default function DriverDashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-start gap-2 md:gap-3 mt-2 md:mt-3">
-                    <div className="text-red-600 mt-0.5">🏠</div>
+                    <Home className="w-4 h-4 text-red-600"/>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs md:text-sm text-gray-500">送餐地址</div>
                       <div className="text-sm md:text-base truncate">{order.deliveryAddress}</div>
@@ -381,7 +382,7 @@ export default function DriverDashboardPage() {
                   </div>
                   {order.customerPhone && (
                     <div className="mt-2 text-sm">
-                      📞 {order.customerPhone}
+                      電話: {order.customerPhone}
                     </div>
                   )}
                 </div>
@@ -394,7 +395,7 @@ export default function DriverDashboardPage() {
                       disabled={actionLoading === order.id}
                       className="flex-1 bg-blue-600 text-white py-2.5 md:py-3 rounded-lg hover:bg-blue-700 font-medium text-sm md:text-base disabled:opacity-50"
                     >
-                      {actionLoading === order.id ? '處理中...' : '🚚 開始配送'}
+                      {actionLoading === order.id ? '處理中...' : '開始配送'}
                     </button>
                   )}
                   {order.status === 'delivering' && (
@@ -403,7 +404,7 @@ export default function DriverDashboardPage() {
                       disabled={actionLoading === order.id}
                       className="flex-1 bg-green-600 text-white py-2.5 md:py-3 rounded-lg hover:bg-green-700 font-medium text-sm md:text-base disabled:opacity-50"
                     >
-                      {actionLoading === order.id ? '處理中...' : '✅ 完成配送'}
+                      {actionLoading === order.id ? '處理中...' : '完成配送 ✓'}
                     </button>
                   )}
                 </div>
