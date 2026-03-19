@@ -65,10 +65,10 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   }
 
   const navItems = [
-    { href: '/customer', label: '首頁', icon: '🏡' },
-    { href: '/customer/cart', label: '購物車', icon: '🛍', component: CartIcon },
-    { href: '/customer/orders', label: '訂單', icon: '📄' },
-    { href: '/customer/profile', label: '我的', icon: '我' },
+    { href: '/customer', label: '首頁', icon: 'H' },
+    { href: '/customer/cart', label: '購物車', icon: 'C', component: CartIcon },
+    { href: '/customer/orders', label: '訂單', icon: 'O' },
+    { href: '/customer/profile', label: '我的', icon: 'M' },
   ];
 
   return (
