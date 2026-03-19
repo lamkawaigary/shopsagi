@@ -83,7 +83,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {item.icon && <item.icon className="w-5 h-5" />} {item.label}
+                {item.label}
               </Link>
             ))}
             <button
@@ -93,7 +93,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
               }}
               className="block w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg"
             >
-              🚪 登出
+              登出
             </button>
           </div>
         )}
@@ -149,7 +149,6 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
                   isActive ? 'text-blue-600' : 'text-gray-500'
                 }`}
               >
-                {item.icon && <item.icon className="w-5 h-5" />}
                 <span className="text-xs mt-0.5">{item.label}</span>
               </Link>
             );
