@@ -6,6 +6,10 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useCart } from '@/lib/cart';
 import { useToast } from '@/components/Toast';
+import { Scan } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 interface Product {
   id: string;
@@ -30,6 +34,12 @@ export default function CustomerHomePage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleBarcodeScan = (barcode: string) => {
+    setShowScanner(false);
+    setSearchQuery(barcode);
+  };
   const { addItem } = useCart();
   const { showToast } = useToast();
 
@@ -75,7 +85,8 @@ export default function CustomerHomePage() {
 
   const filteredProducts = products.filter(p => {
     const matchCategory = selectedCategory === 'all' || p.category === selectedCategory;
-    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ((p as any).barcode && (p as any).barcode.includes(searchQuery));
     return matchCategory && matchSearch;
   });
 
@@ -112,6 +123,12 @@ export default function CustomerHomePage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
           />
+          <button
+            onClick={() => setShowScanner(true)}
+            className="p-2 bg-purple-600 text-white rounded-lg"
+          >
+            <Scan className="w-5 h-5" />
+          </button>
         </div>
         
         {/* Categories - horizontal scroll on mobile */}
@@ -201,6 +218,8 @@ export default function CustomerHomePage() {
           </div>
         )}
       </div>
+
+      {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
     </div>
   );
 }
