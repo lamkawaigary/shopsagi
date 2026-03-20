@@ -6,7 +6,10 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth } from '@/lib/firebase';
-import { Save } from 'lucide-react';
+import { Save, Scan } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 const CATEGORIES = [
   '食品',
@@ -25,6 +28,13 @@ export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleBarcodeScan = (barcode: string) => {
+    setShowScanner(false);
+    setFormData({ ...formData, barcode });
+  };
+
   const [formData, setFormData] = useState({
     barcode: '' ,
     name: '',
@@ -145,13 +155,22 @@ export default function NewProductPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               條碼 / 商品編號
             </label>
-            <input
-              type="text"
-              value={formData.barcode}
-              onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="例如：4891234567890"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.barcode}
+                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="例如：4891234567890"
+              />
+              <button
+                type="button"
+                onClick={() => setShowScanner(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-1"
+              >
+                <Scan className="w-5 h-5" /> 掃描
+              </button>
+            </div>
           </div>
 
           {/* Description */}
@@ -225,6 +244,8 @@ export default function NewProductPage() {
           </div>
         </form>
       </div>
+
+      {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
     </div>
   );
 }
