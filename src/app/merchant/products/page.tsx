@@ -18,6 +18,7 @@ interface Product {
   price: number;
   category: string;
   imageUrl?: string;
+  barcode?: string;
   status: 'active' | 'inactive';
   createdAt: any;
 }
@@ -25,22 +26,28 @@ interface Product {
 export default function ProductsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [showScanner, setShowScanner] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Search from all products
+  const searchProducts = (term: string) => {
+    if (!term) {
+      setProducts(allProducts);
+      return;
+    }
+    const filtered = allProducts.filter(p => 
+      p.name.toLowerCase().includes(term.toLowerCase()) ||
+      (p.barcode && p.barcode.includes(term))
+    );
+    setProducts(filtered);
+  };
 
   const handleBarcodeScan = (barcode: string) => {
     setShowScanner(false);
-    // Filter products by barcode or name
-    const filtered = products.filter(p => 
-      p.name.toLowerCase().includes(barcode.toLowerCase()) ||
-      (p as any).barcode?.includes(barcode)
-    );
-    if (filtered.length > 0) {
-      setProducts(filtered);
-    } else {
-      alert('找不到相關商品');
-    }
+    searchProducts(barcode);
   };
 
   useEffect(() => {
@@ -74,6 +81,7 @@ export default function ProductsPage() {
         ...doc.data()
       })) as Product[];
       setProducts(productList);
+      setAllProducts(productList);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
@@ -147,6 +155,32 @@ export default function ProductsPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl shadow-sm mb-4 p-4 flex gap-2">
+        <input
+          type="text"
+          placeholder="搜尋商品名稱或條碼..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && searchProducts(searchTerm)}
+          className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={() => searchProducts(searchTerm)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+        >
+          搜尋
+        </button>
+        {searchTerm && (
+          <button
+            onClick={() => { setSearchTerm(''); setProducts(allProducts); }}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg"
+          >
+            清除
+          </button>
+        )}
       </div>
 
       {/* Products Grid */}
