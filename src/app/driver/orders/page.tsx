@@ -6,6 +6,10 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebas
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { Search, Scan, Calendar, Package } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 interface Order {
   id: string;
@@ -28,6 +32,35 @@ export default function DriverOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'completed' | 'cancelled'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [showScanner, setShowScanner] = useState(false);
+
+  // Stats
+  const todayOrders = orders.filter(o => {
+    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const today = new Date();
+    return orderDate.toDateString() === today.toDateString();
+  });
+  const todayEarnings = todayOrders.reduce((sum, o) => sum + (o.fee || 0), 0);
+
+  // Filter by date
+  const filterByDate = (orders: Order[]) => {
+    if (dateFilter === 'all') return orders;
+    const now = new Date();
+    return orders.filter(o => {
+      const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      if (dateFilter === 'today') {
+        return orderDate.toDateString() === now.toDateString();
+      }
+      return true;
+    });
+  };
+
+  const handleBarcodeScan = (barcode: string) => {
+    setShowScanner(false);
+    setSearchTerm(barcode);
+  };
 
   useEffect(() => {
     if (!auth) {
@@ -130,12 +163,20 @@ export default function DriverOrdersPage() {
     });
   };
 
-  const filteredOrders = orders.filter(order => {
-    if (filter === 'all') return true;
+  let filtered = orders.filter(order => {
     if (filter === 'completed') return order.status === 'delivered';
     if (filter === 'cancelled') return order.status === 'cancelled';
+    if (filter !== 'all') return order.status === filter;
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchOrder = (order.orderNumber || order.id || '').toLowerCase().includes(search);
+      const matchMerchant = (order.merchantName || '').toLowerCase().includes(search);
+      if (!matchOrder && !matchMerchant) return false;
+    }
     return true;
   });
+  filtered = filterByDate(filtered);
+  const filteredOrders = filtered;
 
   const completedOrders = orders.filter(o => o.status === 'delivered');
   const totalEarnings = completedOrders.reduce((sum, o) => sum + (o.fee || 25), 0);
@@ -162,9 +203,42 @@ export default function DriverOrdersPage() {
             <div className="text-2xl font-bold text-green-600">{completedOrders.length}</div>
           </div>
           <div>
-            <div className="text-sm text-gray-600">總收入</div>
+            <div className="text-sm text-gray-600">今日收入</div>
             <div className="text-2xl font-bold text-green-600">HK${totalEarnings}</div>
           </div>
+        </div>
+      </div>
+
+      {/* Search & Date Filter */}
+      <div className="bg-white rounded-xl shadow-sm mb-4 p-4 flex flex-col md:flex-row gap-3">
+        <div className="flex-1 flex gap-2">
+          <input
+            type="text"
+            placeholder="搜尋訂單編號或商戶名..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => setShowScanner(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg"
+          >
+            <Scan className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setDateFilter('all')}
+            className={`px-3 py-2 rounded-lg text-sm ${dateFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+          >
+            全部
+          </button>
+          <button
+            onClick={() => setDateFilter('today')}
+            className={`px-3 py-2 rounded-lg text-sm ${dateFilter === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+          >
+            今日
+          </button>
         </div>
       </div>
 
@@ -233,6 +307,8 @@ export default function DriverOrdersPage() {
           ))}
         </div>
       )}
+      
+      {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
     </div>
   );
 }
