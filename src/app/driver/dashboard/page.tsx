@@ -6,7 +6,8 @@ import { collection, query, where, getDocs, orderBy, limit, doc, updateDoc, getD
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Truck, Star, Rocket, FileText, Home, MapPin, Phone, Check, Package, Zap } from 'lucide-react';
+import Link from 'next/link';
+import { Truck, Star, Rocket, FileText, Home, MapPin, Phone, Check, Package, Zap, Shield } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -245,6 +246,14 @@ export default function DriverDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* KYC Button */}
+      <Link
+        href="/driver/kyc"
+        className="block w-full bg-purple-600 text-white py-3 px-4 rounded-xl font-medium text-center hover:bg-purple-700 mb-6"
+      >
+        認證資料
+      </Link>
 
       {/* Stats - 2x2 on mobile */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
