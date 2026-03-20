@@ -5,6 +5,10 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { Search, Scan, Calendar, DollarSign, Package } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'delivering', 'completed'];
 
@@ -13,6 +17,52 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [showScanner, setShowScanner] = useState(false);
+
+  // Stats
+  const todayOrders = orders.filter(o => {
+    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const today = new Date();
+    return orderDate.toDateString() === today.toDateString();
+  });
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const weekOrders = orders.filter(o => {
+    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return orderDate >= weekAgo;
+  });
+  const weekRevenue = weekOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+  // Filter by search term
+  const searchOrders = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  // Filter by date
+  const filterByDate = (orders: any[]) => {
+    if (dateFilter === 'all') return orders;
+    const now = new Date();
+    return orders.filter(o => {
+      const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+      if (dateFilter === 'today') {
+        return orderDate.toDateString() === now.toDateString();
+      } else if (dateFilter === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return orderDate >= weekAgo;
+      }
+      return true;
+    });
+  };
+
+  // Handle barcode scan
+  const handleBarcodeScan = (barcode: string) => {
+    setShowScanner(false);
+    setSearchTerm(barcode);
+  };
 
   useEffect(() => {
     if (!auth) {
@@ -90,10 +140,18 @@ export default function OrdersPage() {
     return STATUS_FLOW[currentIndex + 1];
   };
 
-  const filteredOrders = orders.filter(o => {
-    if (filter === 'all') return true;
-    return o.status === filter;
+  let filtered = orders.filter(o => {
+    if (filter !== 'all' && o.status !== filter) return false;
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchOrder = (o.orderNumber || o.id || '').toLowerCase().includes(search);
+      const matchCustomer = (o.customerName || '').toLowerCase().includes(search);
+      if (!matchOrder && !matchCustomer) return false;
+    }
+    return true;
   });
+  filtered = filterByDate(filtered);
+  const filteredOrders = filtered;
 
   if (loading) {
     return (
@@ -106,6 +164,63 @@ export default function OrdersPage() {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">訂單管理</h2>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center gap-2 text-gray-500 mb-1">
+            <Calendar className="w-4 h-4" /> 今日訂單
+          </div>
+          <div className="text-2xl font-bold">{todayOrders.length}</div>
+          <div className="text-sm text-green-600">HK${todayRevenue.toFixed(2)}</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center gap-2 text-gray-500 mb-1">
+            <Package className="w-4 h-4" /> 7日訂單
+          </div>
+          <div className="text-2xl font-bold">{weekOrders.length}</div>
+          <div className="text-sm text-green-600">HK${weekRevenue.toFixed(2)}</div>
+        </div>
+      </div>
+
+      {/* Search & Date Filter */}
+      <div className="bg-white rounded-xl shadow-sm mb-4 p-4 flex flex-col md:flex-row gap-3">
+        <div className="flex-1 flex gap-2">
+          <input
+            type="text"
+            placeholder="搜尋訂單編號或客戶名稱..."
+            value={searchTerm}
+            onChange={(e) => searchOrders(e.target.value)}
+            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => setShowScanner(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg"
+          >
+            <Scan className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setDateFilter('all')}
+            className={`px-3 py-2 rounded-lg text-sm ${dateFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+          >
+            全部
+          </button>
+          <button
+            onClick={() => setDateFilter('today')}
+            className={`px-3 py-2 rounded-lg text-sm ${dateFilter === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+          >
+            今日
+          </button>
+          <button
+            onClick={() => setDateFilter('week')}
+            className={`px-3 py-2 rounded-lg text-sm ${dateFilter === 'week' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+          >
+            7日內
+          </button>
+        </div>
+      </div>
 
       {/* Filter */}
       <div className="bg-white rounded-xl shadow-sm mb-6 p-4">
@@ -219,6 +334,8 @@ export default function OrdersPage() {
           ))}
         </div>
       )}
+      
+      {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
     </div>
   );
 }
