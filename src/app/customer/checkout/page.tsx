@@ -78,6 +78,8 @@ export default function CheckoutPage() {
       sessionStorage.setItem('lastOrder', JSON.stringify(orderData));
 
       clearCart();
+      // For now, skip payment and go directly to confirmation
+      // In production: router.push('/payment/checkout?orderId=' + orderData.orderId);
       router.push('/customer/order-confirmation');
     } catch (error) {
       console.error('Error creating order:', error);
