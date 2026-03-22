@@ -9,7 +9,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 const BBMSL_MERCHANT_ID = process.env.BBMSL_MERCHANT_ID;
 const BBMSL_API_KEY = process.env.BBMSL_API_KEY;
 const BBMSL_API_URL = process.env.BBMSL_API_URL || 'https://openapi.bbmsl.com';
-const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://shopsagi.vercel.app';
 
 // BBMSL Keys
 const BBMSL_PUBLIC_KEY = process.env.BBMSL_PUBLIC_KEY;
