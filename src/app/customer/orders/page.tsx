@@ -35,7 +35,7 @@ export default function CustomerOrdersPage() {
     try {
       const q = query(
         collection(db, 'orders'),
-        where('customerId', '==', userId),
+        where('userId', '==', userId),
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(q);

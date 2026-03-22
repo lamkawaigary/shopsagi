@@ -1,16 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/lib/cart';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
+import { MapPin, Plus, ChevronDown } from 'lucide-react';
+
+interface Address {
+  id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  district?: string;
+  isDefault: boolean;
+}
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [showAddressForm, setShowAddressForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
@@ -18,6 +34,46 @@ export default function CheckoutPage() {
     deliveryAddress: '',
     notes: '',
   });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth!, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        await fetchAddresses(currentUser.uid);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const fetchAddresses = async (userId: string) => {
+    if (!db) return;
+    const snapshot = await getDocs(collection(db!, 'users', userId, 'addresses'));
+    const addrList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Address));
+    addrList.sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+    setAddresses(addrList);
+    
+    const defaultAddr = addrList.find(a => a.isDefault);
+    if (defaultAddr) {
+      setSelectedAddressId(defaultAddr.id);
+      setFormData({
+        customerName: defaultAddr.fullName,
+        customerPhone: defaultAddr.phone,
+        deliveryAddress: defaultAddr.address + (defaultAddr.district ? `, ${defaultAddr.district}` : ''),
+        notes: ''
+      });
+    }
+  };
+
+  const handleAddressSelect = (addr: Address) => {
+    setSelectedAddressId(addr.id);
+    setFormData({
+      customerName: addr.fullName,
+      customerPhone: addr.phone,
+      deliveryAddress: addr.address + (addr.district ? `, ${addr.district}` : ''),
+      notes: ''
+    });
+    setShowAddressForm(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,168 +83,129 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!formData.customerName || !formData.customerPhone || !formData.deliveryAddress) {
+      alert('請填寫完整送貨資料');
+      return;
+    }
+
     setLoading(true);
+
     try {
-      // Group items by merchant
-      const ordersByMerchant = items.reduce((acc, item) => {
-        if (!acc[item.merchantId]) {
-          acc[item.merchantId] = {
-            merchantId: item.merchantId,
-            merchantName: item.merchantName,
-            items: [],
-            total: 0,
-          };
-        }
-        acc[item.merchantId].items.push(item);
-        acc[item.merchantId].total += item.price * item.quantity;
-        return acc;
-      }, {} as Record<string, any>);
-
-      // Create an order for each merchant
-      for (const merchantId of Object.keys(ordersByMerchant)) {
-        const order = ordersByMerchant[merchantId];
-        await addDoc(collection(db!, 'orders'), {
-          orderNumber: `ORD${Date.now()}`,
-          customerId: auth.currentUser.uid,
-          customerName: formData.customerName,
-          customerPhone: formData.customerPhone,
-          deliveryAddress: formData.deliveryAddress,
-          notes: formData.notes,
-          merchantId: order.merchantId,
-          merchantName: order.merchantName,
-          items: order.items,
-          total: order.total,
-          status: 'pending',
-          createdAt: serverTimestamp(),
-        });
-      }
-
-      // Save order data for confirmation page
-      const orderNumber = `ORD${Date.now()}`;
+      // Create order
       const orderData = {
-        orderId: 'pending',
-        orderNumber,
-        merchantName: Object.values(ordersByMerchant).map((o: any) => o.merchantName).join(', '),
-        items: items,
+        userId: auth.currentUser.uid,
+        items: items.map(item => ({
+          productId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          merchantId: item.merchantId,
+        })),
         total,
         customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
         deliveryAddress: formData.deliveryAddress,
-        createdAt: new Date().toLocaleString('zh-HK'),
+        notes: formData.notes,
+        status: 'pending',
+        paymentStatus: 'pending',
+        createdAt: serverTimestamp(),
       };
-      sessionStorage.setItem('lastOrder', JSON.stringify(orderData));
 
+      const orderRef = await addDoc(collection(db!, 'orders'), orderData);
+      
+      // Redirect to payment
       clearCart();
-      // Redirect to payment page
-      router.push('/payment/checkout?orderId=' + orderData.orderId);
-      // router.push('/customer/order-confirmation');
+      router.push('/payment/checkout?orderId=' + orderRef.id);
     } catch (error) {
-      console.error('Error creating order:', error);
-      alert('訂單建立失敗，請再試過');
-    } finally {
+      console.error('Order error:', error);
+      alert('建立訂單失敗，請重試');
       setLoading(false);
     }
   };
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-4xl mb-4">購物車</div>
-        <h2 className="text-xl font-bold mb-2">購物車係咁</h2>
-        <Link href="/customer" className="text-purple-600 hover:underline">
-          去shopping
-        </Link>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">購物車係空既</p>
+          <Link href="/customer" className="text-purple-600 hover:underline">
+            去購物
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">結帳</h2>
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">結帳</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <h3 className="font-semibold mb-4">送貨資料</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                姓名 *
-              </label>
-              <input
-                type="text"
-                value={formData.customerName}
-                onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                電話 *
-              </label>
-              <input
-                type="tel"
-                value={formData.customerPhone}
-                onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-                placeholder="+852 1234 5678"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                送貨地址 *
-              </label>
-              <input
-                type="text"
-                value={formData.deliveryAddress}
-                onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-                placeholder="香港中環..."
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                備註
-              </label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg"
-                placeholder="例如：送到大堂..."
-                rows={2}
-              />
-            </div>
+      <form onSubmit={handleSubmit}>
+        {/* Saved Addresses */}
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold">送貨地址</h3>
+            <Link href="/customer/addresses" className="text-sm text-purple-600 hover:underline flex items-center gap-1">
+              <Plus className="w-4 h-4" /> 管理地址
+            </Link>
           </div>
+
+          {addresses.length > 0 ? (
+            <div className="space-y-2">
+              {addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  onClick={() => handleAddressSelect(addr)}
+                  className={`p-3 rounded-lg border-2 cursor-pointer transition ${
+                    selectedAddressId === addr.id 
+                      ? 'border-purple-500 bg-purple-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span className="font-medium">{addr.label}</span>
+                    {addr.isDefault && <span className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded">預設</span>}
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{addr.fullName} - {addr.phone}</p>
+                  <p className="text-sm text-gray-500">{addr.address}{addr.district ? `, ${addr.district}` : ''}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>未有儲存地址</p>
+              <Link href="/customer/addresses" className="text-purple-600 hover:underline text-sm">
+                新增地址
+              </Link>
+            </div>
+          )}
         </div>
 
-        {/* Order Summary */}
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <h3 className="font-semibold mb-4">訂單內容</h3>
-          <div className="space-y-2 text-sm">
+        {/* Order Details */}
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+          <h3 className="font-semibold mb-3">訂單詳情</h3>
+          <div className="space-y-2">
             {items.map((item) => (
-              <div key={item.id} className="flex justify-between">
+              <div key={item.id} className="flex justify-between text-sm">
                 <span>{item.name} x {item.quantity}</span>
                 <span>HK${item.price * item.quantity}</span>
               </div>
             ))}
           </div>
-          <div className="border-t mt-4 pt-4 flex justify-between font-bold text-lg">
-            <span>總金額：</span>
+          <div className="border-t mt-3 pt-3 flex justify-between font-bold text-lg">
+            <span>總計</span>
             <span className="text-purple-600">HK${total}</span>
           </div>
         </div>
 
+        {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !selectedAddressId}
           className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold text-lg hover:bg-purple-700 disabled:opacity-50"
         >
-          {loading ? '處理中...' : '確認訂單'}
+          {loading ? '處理緊...' : `確認訂單 - HK$${total}`}
         </button>
       </form>
     </div>
