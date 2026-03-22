@@ -100,7 +100,7 @@ export default function CustomerProfilePage() {
         </button>
         
         <Link
-          href="/payment/checkout"
+          href="/customer/payment-methods"
           className="w-full flex justify-between items-center p-4 hover:bg-gray-50"
         >
           <span className="flex items-center gap-3">
@@ -110,8 +110,8 @@ export default function CustomerProfilePage() {
           <span className="text-gray-400">→</span>
         </Link>
         
-        <button
-          onClick={() => alert('Support coming soon!')}
+        <Link
+          href="/customer/support"
           className="w-full flex justify-between items-center p-4 hover:bg-gray-50"
         >
           <span className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export default function CustomerProfilePage() {
             <span>幫助中心</span>
           </span>
           <span className="text-gray-400">→</span>
-        </button>
+        </Link>
       </div>
 
       {/* Logout Button */}
