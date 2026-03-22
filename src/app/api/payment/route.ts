@@ -96,15 +96,19 @@ async function verifyNotificationSignature(
 async function createBBMSLPayment(paymentData: any, privateKey: string): Promise<any> {
   // Convert to JSON string (this is what gets signed)
   const payloadJson = JSON.stringify(paymentData);
+  console.log('BBMSL payload:', payloadJson);
   
   // Generate signature
   const signature = await generateRequestSignature(payloadJson, privateKey);
+  console.log('BBMSL signature generated, length:', signature.length);
   
   // Create request body with escaped JSON
   const requestBody = {
     request: payloadJson,
     signature: signature
   };
+  
+  console.log('Calling BBMSL API:', BBMSL_API_URL + '/payment/hosted/start');
   
   const response = await fetch(`${BBMSL_API_URL}/payment/hosted/start`, {
     method: 'POST',
@@ -115,7 +119,11 @@ async function createBBMSLPayment(paymentData: any, privateKey: string): Promise
     body: JSON.stringify(requestBody)
   });
   
-  return await response.json();
+  const result = await response.json();
+  console.log('BBMSL API response status:', response.status);
+  console.log('BBMSL API response:', JSON.stringify(result));
+  
+  return result;
 }
 
 // ==================== API Routes ====================
@@ -175,25 +183,25 @@ export async function POST(request: NextRequest) {
     const mockPaymentUrl = `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}&amount=${amount}`;
 
     // Call BBMSL API if private key is available
-    // Note: BBMSL uses RSA signature for authentication, API key is optional
     let paymentUrl = mockPaymentUrl;
     
     if (BBMSL_PRIVATE_KEY) {
+      console.log('BBMSL_PRIVATE_KEY found, attempting to call BBMSL API...');
       try {
-        // Try calling BBMSL with just private key (RSA signature auth)
         const result = await createBBMSLPayment(paymentRequest, BBMSL_PRIVATE_KEY);
-        console.log('BBMSL Response:', result);
+        console.log('BBMSL Response:', JSON.stringify(result));
         
         if (result.paymentUrl) {
           paymentUrl = result.paymentUrl;
+          console.log('BBMSL payment URL obtained:', paymentUrl);
         } else if (result.error) {
           console.error('BBMSL Error:', result.error);
         }
-      } catch (bbmslError) {
-        console.error('BBMSL API Error:', bbmslError);
+      } catch (bbmslError: any) {
+        console.error('BBMSL API Error:', bbmslError.message || bbmslError);
       }
     } else {
-      console.log('No BBMSL_PRIVATE_KEY found, using mock payment');
+      console.log('No BBMSL_PRIVATE_KEY found in environment, using mock payment');
     }
     
     // Update order payment status in Firestore
