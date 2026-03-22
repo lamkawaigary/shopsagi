@@ -62,8 +62,14 @@ function CheckoutContent() {
       const data = await response.json();
       
       if (data.success) {
-        alert('付款成功！正在跳轉...');
-        router.push(`/customer/order-confirmation?orderId=${orderId}`);
+        if (data.paymentUrl) {
+          // Redirect to BBMSL payment page
+          window.location.href = data.paymentUrl;
+        } else {
+          // Mock mode - show success
+          alert('付款成功！正在跳轉...');
+          router.push(`/customer/order-confirmation?orderId=${orderId}`);
+        }
       }
     } catch (error) {
       console.error('Payment error:', error);
