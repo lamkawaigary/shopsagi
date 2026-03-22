@@ -11,8 +11,9 @@ const BBMSL_API_KEY = process.env.BBMSL_API_KEY;
 const BBMSL_API_URL = process.env.BBMSL_API_URL || 'https://openapi.bbmsl.com';
 const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-// BBMSL Public Key for verifying notifications (base64)
+// BBMSL Keys
 const BBMSL_PUBLIC_KEY = process.env.BBMSL_PUBLIC_KEY;
+const BBMSL_PRIVATE_KEY = process.env.BBMSL_PRIVATE_KEY;
 
 /**
  * Generate BBMSL Signature for request
@@ -170,13 +171,27 @@ export async function POST(request: NextRequest) {
       ]
     };
 
-    // In production, call BBMSL API:
-    // const result = await createBBMSLPayment(paymentRequest, privateKey);
-    // const paymentUrl = result.paymentUrl;
-    
-    // For demo: return mock payment URL
+    // Mock payment URL (fallback)
     const mockPaymentUrl = `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}&amount=${amount}`;
 
+    // Call BBMSL API if credentials are available
+    let paymentUrl = mockPaymentUrl;
+    
+    if (BBMSL_PRIVATE_KEY && BBMSL_API_KEY) {
+      try {
+        const result = await createBBMSLPayment(paymentRequest, BBMSL_PRIVATE_KEY);
+        console.log('BBMSL Response:', result);
+        
+        if (result.paymentUrl) {
+          paymentUrl = result.paymentUrl;
+        } else if (result.error) {
+          console.error('BBMSL Error:', result.error);
+        }
+      } catch (bbmslError) {
+        console.error('BBMSL API Error:', bbmslError);
+      }
+    }
+    
     // Update order payment status in Firestore
     if (db && orderId) {
       await updateDoc(doc(db, 'orders', orderId), {
@@ -189,7 +204,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      paymentUrl: mockPaymentUrl, // In production: result.paymentUrl
+      paymentUrl: paymentUrl,
       orderId,
       merchantReference,
       amount,

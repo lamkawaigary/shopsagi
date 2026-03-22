@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -98,8 +99,8 @@ export default function CustomerProfilePage() {
           <span className="text-gray-400">→</span>
         </button>
         
-        <button
-          onClick={() => alert('Payment methods coming soon!')}
+        <Link
+          href="/payment/checkout"
           className="w-full flex justify-between items-center p-4 hover:bg-gray-50"
         >
           <span className="flex items-center gap-3">
@@ -107,7 +108,7 @@ export default function CustomerProfilePage() {
             <span>付款方式</span>
           </span>
           <span className="text-gray-400">→</span>
-        </button>
+        </Link>
         
         <button
           onClick={() => alert('Support coming soon!')}
