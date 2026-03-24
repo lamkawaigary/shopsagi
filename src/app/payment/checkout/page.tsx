@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { CreditCard, Smartphone, Wallet, Check } from 'lucide-react';
+import { CheckCircle, CreditCard, Loader2 } from 'lucide-react';
 
 const PAYMENT_METHODS = [
   { id: 'VISA', name: 'Visa', icon: '💳', color: 'bg-blue-100 border-blue-300' },
@@ -12,7 +12,7 @@ const PAYMENT_METHODS = [
   { id: 'ALIPAYHK', name: 'AlipayHK', icon: '🟢', color: 'bg-green-100 border-green-300' },
   { id: 'WECHATPAYHK', name: 'WeChat Pay HK', icon: '🟣', color: 'bg-purple-100 border-purple-300' },
   { id: 'PAYME', name: 'PayMe', icon: '🟦', color: 'bg-blue-100 border-blue-300' },
-  { id: 'OCTOPUS', name: 'Octopus', icon: '🐙', color: 'bg-red-100 border-red-300' },
+  { id: 'FPS', name: 'FPS轉數快', icon: '⚡', color: 'bg-yellow-100 border-yellow-300' },
 ];
 
 function CheckoutContent() {
@@ -22,7 +22,7 @@ function CheckoutContent() {
   
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMethod, setSelectedMethod] = useState<string>('');
+  const [selectedMethod, setSelectedMethod] = useState<string>('VISA');
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -44,10 +44,24 @@ function CheckoutContent() {
   }, [orderId]);
 
   const handlePayment = async () => {
-    if (!selectedMethod || !orderId) return;
+    if (!orderId) return;
 
     setProcessing(true);
     try {
+      // Get items for Stripe session
+      const items = order?.items || [
+        {
+          price_data: {
+            currency: 'hkd',
+            product_data: {
+              name: `Order ${order?.orderNumber || orderId}`,
+            },
+            unit_amount: Math.round((order?.total || 0) * 100),
+          },
+          quantity: 1,
+        }
+      ];
+
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,26 +69,22 @@ function CheckoutContent() {
           amount: order?.total || 0,
           orderId,
           orderNumber: order?.orderNumber,
-          paymentMethod: selectedMethod
+          customerEmail: order?.customerEmail || order?.email,
+          items
         })
       });
 
       const data = await response.json();
       
-      if (data.success) {
-        if (data.paymentUrl) {
-          // Redirect to BBMSL payment page
-          window.location.href = data.paymentUrl;
-        } else {
-          // Mock mode - show success
-          alert('付款成功！正在跳轉...');
-          router.push(`/customer/order-confirmation?orderId=${orderId}`);
-        }
+      if (data.success && data.paymentUrl) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.paymentUrl;
+      } else {
+        throw new Error(data.error || 'Payment failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error);
-      alert('付款失敗，請重試');
-    } finally {
+      alert(`付款失敗: ${error.message}`);
       setProcessing(false);
     }
   };
@@ -82,7 +92,7 @@ function CheckoutContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
       </div>
     );
   }
@@ -136,7 +146,7 @@ function CheckoutContent() {
                     <div className="font-medium text-sm">{method.name}</div>
                   </div>
                   {selectedMethod === method.id && (
-                    <Check className="w-5 h-5 text-purple-600" />
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
                   )}
                 </div>
               </button>
@@ -147,18 +157,31 @@ function CheckoutContent() {
         <button
           onClick={handlePayment}
           disabled={!selectedMethod || processing}
-          className={`w-full py-4 rounded-xl font-bold text-lg mt-6 transition ${
-            selectedMethod 
+          className={`w-full py-4 rounded-xl font-bold text-lg mt-6 transition flex items-center justify-center gap-2 ${
+            selectedMethod && !processing
               ? 'bg-purple-600 text-white hover:bg-purple-700' 
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {processing ? '處理緊...' : `確認付款 HK$${order.total?.toFixed(2) || '0.00'}`}
+          {processing ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              跳轉到Stripe...
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5" />
+              確認付款 HK${order.total?.toFixed(2) || '0.00'}
+            </>
+          )}
         </button>
 
-        <p className="text-center text-gray-500 text-sm mt-4">
-          🔒 SSL加密保障
-        </p>
+        <div className="flex items-center justify-center gap-2 mt-4 text-gray-500 text-sm">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+          </svg>
+          <span>SSL加密保障</span>
+        </div>
       </div>
     </div>
   );
@@ -168,7 +191,7 @@ export default function CheckoutPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
       </div>
     }>
       <CheckoutContent />
