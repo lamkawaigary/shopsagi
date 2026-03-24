@@ -83,8 +83,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Stripe payment error:', error);
+    console.error('Error type:', error.type);
+    console.error('Error code:', error.code);
+    console.error('Stripe error:', error.stripeError);
+    
     return NextResponse.json(
-      { error: error.message || 'Failed to create payment session' },
+      { 
+        error: error.message || 'Failed to create payment session',
+        errorType: error.type,
+        errorCode: error.code,
+        details: error.stack
+      },
       { status: 500 }
     );
   }

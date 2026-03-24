@@ -84,7 +84,8 @@ function CheckoutContent() {
       }
     } catch (error: any) {
       console.error('Payment error:', error);
-      alert(`付款失敗: ${error.message}`);
+      const errorMessage = error.message || 'Unknown error';
+      alert(`付款失敗: ${errorMessage}\n\n請截圖此錯誤聯繫客服`);
       setProcessing(false);
     }
   };
