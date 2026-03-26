@@ -102,11 +102,11 @@ export default function UnifiedLoginPage() {
           router.push(ROLES.find(r => r.id === selectedRole)!.redirect);
         } else {
           setError(`此帳戶不是${ROLES.find(r => r.id === selectedRole)?.title}帳戶`);
-          await auth.signOut();
+          await auth!.signOut();
         }
       } else {
         setError('用戶不存在，請先註冊');
-        await auth.signOut();
+        await auth!.signOut();
       }
     } catch (err: any) {
       if (err.code === 'auth/user-not-found') {
@@ -143,11 +143,11 @@ export default function UnifiedLoginPage() {
           router.push(ROLES.find(r => r.id === selectedRole)!.redirect);
         } else {
           setError(`此 Google 帳戶是${ROLES.find(r => r.id === userData.role)?.title}帳戶，請選擇正確角色`);
-          await auth.signOut();
+          await auth!.signOut();
         }
       } else {
         setError('請先註冊一個帳戶');
-        await auth.signOut();
+        await auth!.signOut();
       }
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
