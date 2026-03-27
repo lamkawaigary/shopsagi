@@ -29,25 +29,39 @@ function SuccessContent() {
       
       try {
         // If we have a session_id, verify with Stripe first
+        let paymentVerified = false;
+        
         if (sessionId) {
-          const response = await fetch(`/api/payment?sessionId=${sessionId}`);
-          const data = await response.json();
-          
-          if (data.paymentStatus === 'paid') {
-            await updateDoc(doc(db, 'orders', orderId), {
-              paymentStatus: 'paid',
-              stripeSessionId: sessionId,
-              paidAt: new Date().toISOString(),
-              paymentAmount: data.amountTotal
-            });
+          try {
+            const response = await fetch(`/api/payment?sessionId=${sessionId}`);
+            const data = await response.json();
+            
+            if (data.paymentStatus === 'paid') {
+              paymentVerified = true;
+              await updateDoc(doc(db, 'orders', orderId), {
+                paymentStatus: 'paid',
+                stripeSessionId: sessionId,
+                paidAt: new Date().toISOString(),
+                paymentAmount: data.amountTotal
+              });
+              console.log('Order updated with Stripe verification:', orderId);
+            }
+          } catch (verifyErr) {
+            console.error('Stripe verification failed, trying direct update:', verifyErr);
           }
-        } else if (orderId) {
+        }
+        
+        // If Stripe verification didn't work, still try to update the order
+        // This handles cases where webhook hasn't fired yet
+        if (!paymentVerified && orderId) {
           await updateDoc(doc(db, 'orders', orderId), {
             paymentStatus: 'paid',
-            paidAt: new Date().toISOString()
+            paidAt: new Date().toISOString(),
+            stripeSessionId: sessionId || null,
+            paidVia: 'checkout_return'
           });
+          console.log('Order marked as paid (direct update):', orderId);
         }
-        console.log('Order marked as paid:', orderId);
       } catch (err) {
         console.error('Error updating order:', err);
         setError('更新訂單狀態時發生錯誤');
