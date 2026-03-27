@@ -1,19 +1,8 @@
-// Stripe Payment API Route
+// Stripe Payment API Route - Edge Function
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-02-25.clover'
-});
+export const runtime = 'edge';
 
-const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://shopsagi.vercel.app';
-
-/**
- * POST /api/payment
- * Create Stripe Checkout Session
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -22,7 +11,6 @@ export async function POST(request: NextRequest) {
       orderId, 
       orderNumber,
       customerEmail,
-      customerPhone,
       items,
       successUrl,
       cancelUrl
@@ -35,42 +23,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      customer_email: customerEmail || undefined,
-      payment_method_types: ['card'],
-      line_items: items || [
-        {
-          price_data: {
-            currency: 'hkd',
-            product_data: {
-              name: `Order ${orderNumber || orderId}`,
-            },
-            unit_amount: Math.round(amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        }
-      ],
-      metadata: {
-        orderId,
-        orderNumber: orderNumber || orderId,
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      return NextResponse.json(
+        { error: 'Stripe secret key not configured' },
+        { status: 500 }
+      );
+    }
+
+    const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://shopsagi.vercel.app';
+
+    // Create Stripe Checkout Session via fetch
+    const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeSecretKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      success_url: successUrl || `${NEXT_PUBLIC_BASE_URL}/payment/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl || `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}`,
-      phone_number_collection: {
-        enabled: true,
-      },
+      body: new URLSearchParams({
+        'mode': 'payment',
+        'payment_method_types[0]': 'card',
+        'line_items[0][price_data][currency]': 'hkd',
+        'line_items[0][price_data][product_data][name]': `Order ${orderNumber || orderId}`,
+        'line_items[0][price_data][unit_amount]': String(Math.round(amount * 100)),
+        'line_items[0][quantity]': '1',
+        'metadata[orderId]': orderId,
+        'metadata[orderNumber]': orderNumber || orderId,
+        'success_url': successUrl || `${NEXT_PUBLIC_BASE_URL}/payment/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
+        'cancel_url': cancelUrl || `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}`,
+      }).toString(),
     });
 
-    // Update order payment status in Firestore
-    if (db && orderId) {
-      await updateDoc(doc(db, 'orders', orderId), {
-        paymentStatus: 'pending',
-        stripeSessionId: session.id,
-        paymentCreatedAt: serverTimestamp(),
-      });
+    if (!stripeResponse.ok) {
+      const errorData = await stripeResponse.json();
+      throw new Error(errorData.error?.message || 'Failed to create Stripe session');
     }
+
+    const session = await stripeResponse.json();
 
     return NextResponse.json({
       success: true,
@@ -83,55 +72,49 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Stripe payment error:', error);
-    console.error('Error type:', error.type);
-    console.error('Error code:', error.code);
-    console.error('Stripe error:', error.stripeError);
-    
     return NextResponse.json(
-      { 
-        error: error.message || 'Failed to create payment session',
-        errorType: error.type,
-        errorCode: error.code,
-        details: error.stack
-      },
+      { error: error.message || 'Failed to create payment session' },
       { status: 500 }
     );
   }
 }
 
-/**
- * GET /api/payment
- * Retrieve payment status
- */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get('sessionId');
-  const orderId = searchParams.get('orderId');
 
-  if (!sessionId && !orderId) {
+  if (!sessionId) {
     return NextResponse.json(
-      { error: 'Missing sessionId or orderId' },
+      { error: 'Missing sessionId' },
       { status: 400 }
     );
   }
 
   try {
-    if (sessionId) {
-      // Retrieve from Stripe
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      
-      return NextResponse.json({
-        sessionId: session.id,
-        paymentStatus: session.payment_status,
-        customerEmail: session.customer_email,
-        amountTotal: session.amount_total ? session.amount_total / 100 : null,
-        currency: session.currency?.toUpperCase(),
-      });
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      throw new Error('Stripe secret key not configured');
     }
 
+    const stripeResponse = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+      headers: {
+        'Authorization': `Bearer ${stripeSecretKey}`,
+      },
+    });
+
+    if (!stripeResponse.ok) {
+      const errorData = await stripeResponse.json();
+      throw new Error(errorData.error?.message || 'Failed to retrieve session');
+    }
+
+    const session = await stripeResponse.json();
+
     return NextResponse.json({
-      orderId,
-      paymentStatus: 'pending'
+      sessionId: session.id,
+      paymentStatus: session.payment_status,
+      customerEmail: session.customer_email,
+      amountTotal: session.amount_total ? session.amount_total / 100 : null,
+      currency: session.currency?.toUpperCase(),
     });
 
   } catch (error: any) {
