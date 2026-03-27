@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { CheckCircle, CreditCard, Loader2, Plus } from 'lucide-react';
 
 interface SavedCard {
@@ -34,7 +35,9 @@ function CheckoutContent() {
   const [customerId, setCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(async (currentUser) => {
+    if (!auth) return;
+    
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
