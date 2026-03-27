@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
 
     // If save card is requested
     if (saveCard) {
-      sessionParams['save_payment_method'] = 'true';
-      sessionParams['setup_future_usage'] = 'on_session';
+      // Use correct Stripe API parameters
+      sessionParams['saved_payment_method_options[card][setup_future_usage]'] = 'on_session';
     }
 
     // Create Stripe Checkout Session via fetch
