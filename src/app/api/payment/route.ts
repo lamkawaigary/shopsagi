@@ -11,9 +11,12 @@ export async function POST(request: NextRequest) {
       orderId, 
       orderNumber,
       customerEmail,
+      customerId, // Stripe Customer ID
       items,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      saveCard, // Whether to save the card
+      paymentMethodId, // Selected saved payment method
     } = body;
 
     if (!amount || !orderId) {
@@ -33,6 +36,55 @@ export async function POST(request: NextRequest) {
 
     const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://shopsagi.vercel.app';
 
+    // Build session parameters
+    const sessionParams: Record<string, string> = {
+      'mode': 'payment',
+      'payment_method_types[0]': 'card',
+      'line_items[0][price_data][currency]': 'hkd',
+      'line_items[0][price_data][product_data][name]': `Order ${orderNumber || orderId}`,
+      'line_items[0][price_data][unit_amount]': String(Math.round(amount * 100)),
+      'line_items[0][quantity]': '1',
+      'metadata[orderId]': orderId,
+      'metadata[orderNumber]': orderNumber || orderId,
+      'success_url': successUrl || `${NEXT_PUBLIC_BASE_URL}/payment/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
+      'cancel_url': cancelUrl || `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}`,
+    };
+
+    // If user has a Stripe Customer ID, attach to session
+    if (customerId) {
+      sessionParams['customer'] = customerId;
+    } else if (customerEmail) {
+      // If no customer ID but has email, create a customer
+      const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${stripeSecretKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          'email': customerEmail,
+          'metadata[orderId]': orderId,
+        }).toString(),
+      });
+      
+      if (customerResponse.ok) {
+        const customer = await customerResponse.json();
+        sessionParams['customer'] = customer.id;
+      }
+    }
+
+    // If using a saved payment method
+    if (paymentMethodId) {
+      sessionParams['payment_method'] = paymentMethodId;
+      sessionParams['confirm'] = 'true';
+    }
+
+    // If save card is requested
+    if (saveCard) {
+      sessionParams['save_payment_method'] = 'true';
+      sessionParams['setup_future_usage'] = 'on_session';
+    }
+
     // Create Stripe Checkout Session via fetch
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
@@ -40,18 +92,7 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${stripeSecretKey}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        'mode': 'payment',
-        'payment_method_types[0]': 'card',
-        'line_items[0][price_data][currency]': 'hkd',
-        'line_items[0][price_data][product_data][name]': `Order ${orderNumber || orderId}`,
-        'line_items[0][price_data][unit_amount]': String(Math.round(amount * 100)),
-        'line_items[0][quantity]': '1',
-        'metadata[orderId]': orderId,
-        'metadata[orderNumber]': orderNumber || orderId,
-        'success_url': successUrl || `${NEXT_PUBLIC_BASE_URL}/payment/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
-        'cancel_url': cancelUrl || `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}`,
-      }).toString(),
+      body: new URLSearchParams(sessionParams).toString(),
     });
 
     if (!stripeResponse.ok) {
@@ -65,6 +106,7 @@ export async function POST(request: NextRequest) {
       success: true,
       paymentUrl: session.url,
       sessionId: session.id,
+      customerId: session.customer,
       orderId,
       amount,
       currency: 'HKD'
@@ -113,8 +155,10 @@ export async function GET(request: NextRequest) {
       sessionId: session.id,
       paymentStatus: session.payment_status,
       customerEmail: session.customer_email,
+      customerId: session.customer,
       amountTotal: session.amount_total ? session.amount_total / 100 : null,
       currency: session.currency?.toUpperCase(),
+      savedPaymentMethod: session.setup_future_usage ? true : false,
     });
 
   } catch (error: any) {
