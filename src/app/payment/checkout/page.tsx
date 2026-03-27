@@ -4,26 +4,71 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { CheckCircle, CreditCard, Loader2 } from 'lucide-react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { CheckCircle, CreditCard, Loader2, Plus } from 'lucide-react';
 
-const PAYMENT_METHODS = [
-  { id: 'VISA', name: 'Visa', icon: '💳', color: 'bg-blue-100 border-blue-300' },
-  { id: 'MASTER', name: 'Mastercard', icon: '💳', color: 'bg-orange-100 border-orange-300' },
-  { id: 'ALIPAYHK', name: 'AlipayHK', icon: '🟢', color: 'bg-green-100 border-green-300' },
-  { id: 'WECHATPAYHK', name: 'WeChat Pay HK', icon: '🟣', color: 'bg-purple-100 border-purple-300' },
-  { id: 'PAYME', name: 'PayMe', icon: '🟦', color: 'bg-blue-100 border-blue-300' },
-  { id: 'FPS', name: 'FPS轉數快', icon: '⚡', color: 'bg-yellow-100 border-yellow-300' },
-];
+interface SavedCard {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+}
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams?.get('orderId') || '';
   
+  const [user, setUser] = useState<User | null>(null);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMethod, setSelectedMethod] = useState<string>('VISA');
+  const [selectedMethod, setSelectedMethod] = useState<string>('card');
   const [processing, setProcessing] = useState(false);
+  const [saveCard, setSaveCard] = useState(true);
+  
+  // Saved cards state
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(async (currentUser) => {
+      setUser(currentUser);
+      
+      if (currentUser) {
+        // Get or create Stripe customer
+        try {
+          const customerRes = await fetch('/api/customer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser.uid,
+              email: currentUser.email,
+              name: currentUser.displayName || '',
+            })
+          });
+          const customerData = await customerRes.json();
+          if (customerData.customerId) {
+            setCustomerId(customerData.customerId);
+            
+            // Get saved payment methods
+            const pmRes = await fetch(`/api/payment-methods?customerId=${customerData.customerId}`);
+            const pmData = await pmRes.json();
+            if (pmData.paymentMethods && pmData.paymentMethods.length > 0) {
+              setSavedCards(pmData.paymentMethods);
+              setSelectedCardId(pmData.paymentMethods[0].id);
+            }
+          }
+        } catch (err) {
+          console.error('Error getting customer:', err);
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!orderId) {
@@ -48,30 +93,30 @@ function CheckoutContent() {
 
     setProcessing(true);
     try {
-      // Get items for Stripe session
-      const items = order?.items || [
-        {
-          price_data: {
-            currency: 'hkd',
-            product_data: {
-              name: `Order ${order?.orderNumber || orderId}`,
-            },
-            unit_amount: Math.round((order?.total || 0) * 100),
-          },
-          quantity: 1,
-        }
-      ];
+      // Determine payment parameters
+      const paymentParams: any = {
+        amount: order?.total || 0,
+        orderId,
+        orderNumber: order?.orderNumber,
+        customerEmail: order?.customerEmail || order?.email || user?.email,
+        saveCard: saveCard && !selectedCardId, // Only save if using new card
+      };
+
+      // If we have a customer ID, include it
+      if (customerId) {
+        paymentParams.customerId = customerId;
+      }
+
+      // If using a saved card
+      if (selectedCardId) {
+        paymentParams.paymentMethodId = selectedCardId;
+        paymentParams.saveCard = false; // Don't save again
+      }
 
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: order?.total || 0,
-          orderId,
-          orderNumber: order?.orderNumber,
-          customerEmail: order?.customerEmail || order?.email,
-          items
-        })
+        body: JSON.stringify(paymentParams)
       });
 
       const data = await response.json();
@@ -88,6 +133,26 @@ function CheckoutContent() {
       alert(`付款失敗: ${errorMessage}\n\n請截圖此錯誤聯繫客服`);
       setProcessing(false);
     }
+  };
+
+  const getCardBrandIcon = (brand: string) => {
+    const brands: Record<string, string> = {
+      visa: '💳',
+      mastercard: '💳',
+      amex: '💳',
+      jcb: '💳',
+    };
+    return brands[brand] || '💳';
+  };
+
+  const getCardBrandName = (brand: string) => {
+    const names: Record<string, string> = {
+      visa: 'Visa',
+      mastercard: 'Mastercard',
+      amex: 'American Express',
+      jcb: 'JCB',
+    };
+    return names[brand] || brand;
   };
 
   if (loading) {
@@ -116,6 +181,7 @@ function CheckoutContent() {
       <div className="max-w-md mx-auto">
         <h1 className="text-2xl font-bold text-center mb-6">選擇付款方式</h1>
 
+        {/* Order Summary */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-600">訂單編號</span>
@@ -127,39 +193,91 @@ function CheckoutContent() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <h2 className="font-semibold mb-4">付款方式</h2>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {PAYMENT_METHODS.map((method) => (
+        {/* Saved Cards Section */}
+        {savedCards.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+            <h2 className="font-semibold mb-4">已保存的信用卡</h2>
+            
+            <div className="space-y-3">
+              {savedCards.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => {
+                    setSelectedCardId(card.id);
+                    setSelectedMethod('saved');
+                  }}
+                  className={`w-full p-4 rounded-xl border-2 text-left transition ${
+                    selectedCardId === card.id 
+                      ? 'border-purple-500 bg-purple-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{getCardBrandIcon(card.brand)}</div>
+                      <div>
+                        <div className="font-medium">
+                          {getCardBrandName(card.brand)} •••• {card.last4}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          有效期: {card.expMonth}/{card.expYear}
+                        </div>
+                      </div>
+                    </div>
+                    {selectedCardId === card.id && (
+                      <CheckCircle className="w-5 h-5 text-purple-600" />
+                    )}
+                  </div>
+                </button>
+              ))}
+              
+              {/* Option to use new card */}
               <button
-                key={method.id}
-                onClick={() => setSelectedMethod(method.id)}
-                className={`p-4 rounded-xl border-2 text-left transition ${
-                  selectedMethod === method.id 
+                onClick={() => {
+                  setSelectedCardId(null);
+                  setSelectedMethod('card');
+                }}
+                className={`w-full p-4 rounded-xl border-2 text-left transition ${
+                  selectedMethod === 'card' && !selectedCardId
                     ? 'border-purple-500 bg-purple-50' 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl mb-1">{method.icon}</div>
-                    <div className="font-medium text-sm">{method.name}</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">
+                    <Plus className="w-6 h-6 text-gray-400" />
                   </div>
-                  {selectedMethod === method.id && (
-                    <CheckCircle className="w-5 h-5 text-purple-600" />
-                  )}
+                  <div className="font-medium text-gray-600">使用新卡</div>
                 </div>
               </button>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* Save Card Option */}
+        {selectedMethod === 'card' && !selectedCardId && user && (
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={saveCard}
+                onChange={(e) => setSaveCard(e.target.checked)}
+                className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+              />
+              <div>
+                <div className="font-medium">保存信用卡</div>
+                <div className="text-sm text-gray-500">下次購物更快捷</div>
+              </div>
+            </label>
+          </div>
+        )}
+
+        {/* Pay Button */}
         <button
           onClick={handlePayment}
-          disabled={!selectedMethod || processing}
+          disabled={processing}
           className={`w-full py-4 rounded-xl font-bold text-lg mt-6 transition flex items-center justify-center gap-2 ${
-            selectedMethod && !processing
+            !processing
               ? 'bg-purple-600 text-white hover:bg-purple-700' 
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
