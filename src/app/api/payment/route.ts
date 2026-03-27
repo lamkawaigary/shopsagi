@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
     const sessionParams: Record<string, string> = {
       'mode': 'payment',
       'payment_method_types[0]': 'card',
+      'payment_method_types[1]': 'alipay',
+      'payment_method_types[2]': 'wechat_pay',
       'line_items[0][price_data][currency]': 'hkd',
       'line_items[0][price_data][product_data][name]': `Order ${orderNumber || orderId}`,
       'line_items[0][price_data][unit_amount]': String(Math.round(amount * 100)),
@@ -73,16 +75,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If using a saved payment method
+    // If using a saved payment method (only for card)
     if (paymentMethodId) {
       sessionParams['payment_method'] = paymentMethodId;
-      sessionParams['confirm'] = 'true';
-    }
-
-    // If save card is requested
-    if (saveCard) {
-      // Use correct Stripe API parameters for saving cards
-      sessionParams['payment_method_options[card][setup_future_usage]'] = 'on_session';
+      sessionParams['payment_method_types[0]'] = 'card'; // Force card only when using saved method
     }
 
     // Create Stripe Checkout Session via fetch

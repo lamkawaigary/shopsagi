@@ -4,8 +4,8 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { CheckCircle, CreditCard, Loader2, Plus } from 'lucide-react';
 
 interface SavedCard {
@@ -17,6 +17,12 @@ interface SavedCard {
   isDefault: boolean;
 }
 
+const PAYMENT_METHODS = [
+  { id: 'card', name: '信用卡/扣账卡', icon: '💳', color: 'bg-blue-50 border-blue-200' },
+  { id: 'alipay', name: 'AlipayHK', icon: '🔵', color: 'bg-green-50 border-green-200' },
+  { id: 'wechat_pay', name: 'WeChat Pay HK', icon: '🟢', color: 'bg-emerald-50 border-emerald-200' },
+];
+
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +33,6 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<string>('card');
   const [processing, setProcessing] = useState(false);
-  const [saveCard, setSaveCard] = useState(true);
   
   // Saved cards state
   const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
@@ -102,7 +107,6 @@ function CheckoutContent() {
         orderId,
         orderNumber: order?.orderNumber,
         customerEmail: order?.customerEmail || order?.email || user?.email,
-        saveCard: saveCard && !selectedCardId, // Only save if using new card
       };
 
       // If we have a customer ID, include it
@@ -110,10 +114,9 @@ function CheckoutContent() {
         paymentParams.customerId = customerId;
       }
 
-      // If using a saved card
-      if (selectedCardId) {
+      // If using a saved card (only works with card type)
+      if (selectedCardId && selectedMethod === 'card') {
         paymentParams.paymentMethodId = selectedCardId;
-        paymentParams.saveCard = false; // Don't save again
       }
 
       const response = await fetch('/api/payment', {
@@ -197,7 +200,7 @@ function CheckoutContent() {
         </div>
 
         {/* Saved Cards Section */}
-        {savedCards.length > 0 && (
+        {savedCards.length > 0 && selectedMethod === 'card' && (
           <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
             <h2 className="font-semibold mb-4">已保存的信用卡</h2>
             
@@ -205,10 +208,7 @@ function CheckoutContent() {
               {savedCards.map((card) => (
                 <button
                   key={card.id}
-                  onClick={() => {
-                    setSelectedCardId(card.id);
-                    setSelectedMethod('saved');
-                  }}
+                  onClick={() => setSelectedCardId(card.id)}
                   className={`w-full p-4 rounded-xl border-2 text-left transition ${
                     selectedCardId === card.id 
                       ? 'border-purple-500 bg-purple-50' 
@@ -233,47 +233,43 @@ function CheckoutContent() {
                   </div>
                 </button>
               ))}
-              
-              {/* Option to use new card */}
-              <button
-                onClick={() => {
-                  setSelectedCardId(null);
-                  setSelectedMethod('card');
-                }}
-                className={`w-full p-4 rounded-xl border-2 text-left transition ${
-                  selectedMethod === 'card' && !selectedCardId
-                    ? 'border-purple-500 bg-purple-50' 
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">
-                    <Plus className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <div className="font-medium text-gray-600">使用新卡</div>
-                </div>
-              </button>
             </div>
           </div>
         )}
 
-        {/* Save Card Option */}
-        {selectedMethod === 'card' && !selectedCardId && user && (
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={saveCard}
-                onChange={(e) => setSaveCard(e.target.checked)}
-                className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-              />
-              <div>
-                <div className="font-medium">保存信用卡</div>
-                <div className="text-sm text-gray-500">下次購物更快捷</div>
-              </div>
-            </label>
+        {/* Payment Methods */}
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <h2 className="font-semibold mb-4">付款方式</h2>
+          
+          <div className="space-y-3">
+            {PAYMENT_METHODS.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => {
+                  setSelectedMethod(method.id);
+                  if (method.id !== 'card') {
+                    setSelectedCardId(null);
+                  }
+                }}
+                className={`w-full p-4 rounded-xl border-2 text-left transition ${
+                  selectedMethod === method.id 
+                    ? 'border-purple-500 bg-purple-50' 
+                    : `${method.color} border-transparent hover:border-gray-300`
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">{method.icon}</div>
+                    <div className="font-medium">{method.name}</div>
+                  </div>
+                  {selectedMethod === method.id && (
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                  )}
+                </div>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Pay Button */}
         <button
