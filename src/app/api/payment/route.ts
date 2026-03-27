@@ -81,6 +81,10 @@ export async function POST(request: NextRequest) {
       sessionParams['payment_method_types[0]'] = 'card'; // Force card only when using saved method
     }
 
+    // Add payment method options for Alipay and WeChat Pay
+    sessionParams['payment_method_options[wechat_pay][client]'] = 'web';
+    sessionParams['payment_method_options[alipay][preferred_currency]'] = 'HKD';
+
     // Create Stripe Checkout Session via fetch
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
