@@ -22,7 +22,19 @@ function SuccessContent() {
     }
 
     const updateOrderStatus = async () => {
+      console.log('updateOrderStatus called', { orderId, sessionId, dbExists: !!db });
+      
       if (!db) {
+        console.error('Firebase db is not initialized!');
+        // Try to re-initialize Firebase
+        try {
+          const { default: firebaseApp } = await import('@/lib/firebase');
+          console.log('Firebase app:', firebaseApp);
+          const { db: newDb } = await import('@/lib/firebase');
+          console.log('Re-imported db:', newDb);
+        } catch (e) {
+          console.error('Failed to re-import Firebase:', e);
+        }
         setLoading(false);
         return;
       }
