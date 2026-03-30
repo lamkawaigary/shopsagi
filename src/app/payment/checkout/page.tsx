@@ -17,6 +17,24 @@ interface SavedCard {
   isDefault: boolean;
 }
 
+interface CheckoutOrder {
+  id: string;
+  total?: number;
+  orderNumber?: string;
+  customerEmail?: string;
+  email?: string;
+}
+
+interface PaymentRequestPayload {
+  amount: number;
+  orderId: string;
+  orderNumber?: string;
+  customerEmail?: string | null;
+  paymentMethod: string;
+  customerId?: string;
+  paymentMethodId?: string;
+}
+
 const PAYMENT_METHODS = [
   { id: 'card', name: '信用卡/扣账卡', icon: '💳', color: 'bg-blue-50 border-blue-200' },
   { id: 'alipay', name: 'AlipayHK', icon: '🔵', color: 'bg-green-50 border-green-200' },
@@ -29,7 +47,7 @@ function CheckoutContent() {
   const orderId = searchParams?.get('orderId') || '';
   
   const [user, setUser] = useState<User | null>(null);
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<CheckoutOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<string>('card');
   const [processing, setProcessing] = useState(false);
@@ -88,7 +106,8 @@ function CheckoutContent() {
       if (!db) return;
       const orderDoc = await getDoc(doc(db, 'orders', orderId));
       if (orderDoc.exists()) {
-        setOrder({ id: orderDoc.id, ...orderDoc.data() });
+        const data = orderDoc.data() as Omit<CheckoutOrder, 'id'>;
+        setOrder({ id: orderDoc.id, ...data });
       }
       setLoading(false);
     };
@@ -102,11 +121,11 @@ function CheckoutContent() {
     setProcessing(true);
     try {
       // Determine payment parameters
-      const paymentParams: any = {
+      const paymentParams: PaymentRequestPayload = {
         amount: order?.total || 0,
         orderId,
         orderNumber: order?.orderNumber,
-        customerEmail: order?.customerEmail || order?.email || user?.email,
+        customerEmail: order?.customerEmail || order?.email || user?.email || null,
         paymentMethod: selectedMethod,
       };
 
@@ -136,9 +155,9 @@ function CheckoutContent() {
       } else {
         throw new Error(data.error || 'Payment failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      const errorMessage = error.message || 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`付款失敗: ${errorMessage}\n\n請截圖此錯誤聯繫客服`);
       setProcessing(false);
     }

@@ -30,6 +30,13 @@ async function getStripeErrorMessage(response: Response) {
   }
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -156,10 +163,10 @@ export async function POST(request: NextRequest) {
       currency: 'HKD'
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Stripe payment error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create payment session' },
+      { error: getErrorMessage(error, 'Failed to create payment session') },
       { status: 500 }
     );
   }
@@ -206,10 +213,10 @@ export async function GET(request: NextRequest) {
       savedPaymentMethod: session.setup_future_usage ? true : false,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error retrieving payment:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: getErrorMessage(error, 'Failed to retrieve payment') },
       { status: 500 }
     );
   }

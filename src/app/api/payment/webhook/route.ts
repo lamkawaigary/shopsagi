@@ -165,10 +165,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Webhook error:', err);
+    const message = err instanceof Error ? err.message : 'Webhook processing failed';
     return NextResponse.json(
-      { error: err.message || 'Webhook processing failed' },
+      { error: message },
       { status: 400 }
     );
   }
