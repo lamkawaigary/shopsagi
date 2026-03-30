@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
@@ -22,6 +22,25 @@ interface UserProfile {
   role?: string;
 }
 
+type MerchantOrderDoc = {
+  id: string;
+  status?: string;
+  total?: number;
+  createdAt?: { toDate?: () => Date } | string | Date;
+  orderNumber?: string;
+  customerName?: string;
+  items?: unknown[];
+};
+
+type DisplayOrder = {
+  id: string;
+  orderNumber?: string;
+  customerName?: string;
+  items?: unknown[];
+  total?: number;
+  status?: string;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -32,69 +51,73 @@ export default function DashboardPage() {
     totalProducts: 0,
     todayRevenue: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
-    
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        // Fetch user profile from Firestore
-        if (db) {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (userDoc.exists()) {
-            setProfile(userDoc.data() as UserProfile);
-          }
-        }
-        await fetchDashboardData(currentUser.uid);
-      } else {
-        // Not logged in, redirect to login
-        router.push('/register');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+  const [recentOrders, setRecentOrders] = useState<DisplayOrder[]>([]);
+  const [loading, setLoading] = useState<boolean>(() => !auth);
 
   const fetchDashboardData = async (userId: string) => {
     if (!db) return;
-    
+
     try {
-      // Fetch orders for this merchant (simplified query - no index needed)
-      const ordersQuery = query(
+      // Fetch orders for this merchant. Avoid composite index dependency
+      // by sorting client-side after query.
+      const normalizedOrdersQuery = query(
         collection(db, 'orders'),
         where('merchantId', '==', userId),
-        limit(20)
+        limit(50)
       );
-      const ordersSnapshot = await getDocs(ordersQuery);
-      let orders = ordersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      // Sort locally
-      orders = orders.sort((a: any, b: any) => {
-        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
-        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
-        return dateB.getTime() - dateA.getTime();
-      }).slice(0, 5);
-      setRecentOrders(orders);
+      const byMerchantIdsQuery = query(
+        collection(db, 'orders'),
+        where('merchantIds', 'array-contains', userId),
+        limit(50)
+      );
+      // Backward compatibility for older test documents if present.
+      const legacyByItemsMerchantIdsQuery = query(
+        collection(db, 'orders'),
+        where('itemsMerchantIds', 'array-contains', userId),
+        limit(50)
+      );
 
-      // Calculate stats
-      const totalOrders = ordersSnapshot.size;
-      const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
-      const todayRevenue = orders
-        .filter((o: any) => {
-          const orderDate = o.createdAt?.toDate?.() || new Date(o.createdAt);
+      const [normalizedSnapshot, byMerchantIdsSnapshot, legacySnapshot] = await Promise.all([
+        getDocs(normalizedOrdersQuery),
+        getDocs(byMerchantIdsQuery),
+        getDocs(legacyByItemsMerchantIdsQuery),
+      ]);
+
+      const merged = new Map<string, MerchantOrderDoc>();
+      [normalizedSnapshot, byMerchantIdsSnapshot, legacySnapshot].forEach((snapshot) => {
+        snapshot.docs.forEach((docSnap) => {
+          merged.set(docSnap.id, {
+            id: docSnap.id,
+            ...(docSnap.data() as Omit<MerchantOrderDoc, 'id'>),
+          });
+        });
+      });
+
+      const mergedOrders = Array.from(merged.values());
+      const sortedOrders = [...mergedOrders].sort((a, b) => {
+        const dateA = a.createdAt && typeof a.createdAt === 'object' && 'toDate' in a.createdAt
+          ? a.createdAt.toDate?.() || new Date(0)
+          : new Date((a.createdAt as string | Date | undefined) || 0);
+        const dateB = b.createdAt && typeof b.createdAt === 'object' && 'toDate' in b.createdAt
+          ? b.createdAt.toDate?.() || new Date(0)
+          : new Date((b.createdAt as string | Date | undefined) || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      setRecentOrders(sortedOrders.slice(0, 5));
+
+      // Calculate stats based on merged records (not just recent 5)
+      const totalOrders = mergedOrders.length;
+      const pendingOrders = mergedOrders.filter((o) => o.status === 'pending').length;
+      const todayRevenue = mergedOrders
+        .filter((o) => {
+          const orderDate =
+            o.createdAt && typeof o.createdAt === 'object' && 'toDate' in o.createdAt
+              ? o.createdAt.toDate?.() || new Date(0)
+              : new Date((o.createdAt as string | Date | undefined) || 0);
           const today = new Date();
           return orderDate.toDateString() === today.toDateString();
         })
-        .reduce((sum: number, o: any) => sum + (o.total || 0), 0);
+        .reduce((sum, o) => sum + (typeof o.total === 'number' ? o.total : 0), 0);
 
       // Fetch products count
       const productsQuery = query(
@@ -120,6 +143,30 @@ export default function DashboardPage() {
       });
     }
   };
+
+  useEffect(() => {
+    if (!auth) return;
+    
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Fetch user profile from Firestore
+        if (db) {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            setProfile(userDoc.data() as UserProfile);
+          }
+        }
+        await fetchDashboardData(currentUser.uid);
+      } else {
+        // Not logged in, redirect to login
+        router.push('/register');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   if (loading) {
     return (
@@ -246,7 +293,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="divide-y">
-            {recentOrders.map((order: any) => (
+            {recentOrders.map((order) => (
               <div key={order.id} className="p-3 md:p-4 flex items-center justify-between hover:bg-gray-50">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{order.orderNumber || order.id}</div>
@@ -256,8 +303,8 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right ml-3">
                   <div className="font-semibold">HK${order.total || 0}</div>
-                  <span className={`text-xs px-2 py-0.5 md:py-1 rounded-full ${getStatusColor(order.status)}`}>
-                    {getStatusText(order.status)}
+                  <span className={`text-xs px-2 py-0.5 md:py-1 rounded-full ${getStatusColor(order.status || 'pending')}`}>
+                    {getStatusText(order.status || 'pending')}
                   </span>
                 </div>
               </div>
