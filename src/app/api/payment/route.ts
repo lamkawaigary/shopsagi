@@ -3,25 +3,60 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
+type SupportedPaymentMethod = 'card' | 'alipay' | 'wechat_pay';
+
+function getPaymentMethodTypes(selectedMethod?: string): SupportedPaymentMethod[] {
+  switch (selectedMethod) {
+    case 'alipay':
+      return ['alipay'];
+    case 'wechat_pay':
+      return ['wechat_pay'];
+    case 'card':
+    default:
+      return ['card'];
+  }
+}
+
+function getBaseUrl(request: NextRequest) {
+  return process.env.NEXT_PUBLIC_BASE_URL?.trim() || request.nextUrl.origin;
+}
+
+async function getStripeErrorMessage(response: Response) {
+  try {
+    const errorData = await response.json();
+    return errorData?.error?.message || `Stripe API request failed (${response.status})`;
+  } catch {
+    return `Stripe API request failed (${response.status})`;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      amount, 
-      orderId, 
+    const {
+      amount,
+      orderId,
       orderNumber,
       customerEmail,
       customerId, // Stripe Customer ID
-      items,
       successUrl,
       cancelUrl,
       saveCard, // Whether to save the card
+      paymentMethod, // card | alipay | wechat_pay
       paymentMethodId, // Selected saved payment method
     } = body;
 
     if (!amount || !orderId) {
       return NextResponse.json(
         { error: 'Missing required fields: amount, orderId' },
+        { status: 400 }
+      );
+    }
+
+    const parsedAmount = Number(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid amount. amount must be a positive number.' },
         { status: 400 }
       );
     }
@@ -34,27 +69,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://shopsagi.vercel.app';
+    const baseUrl = getBaseUrl(request);
+    const allowedPaymentMethodTypes = getPaymentMethodTypes(paymentMethod);
 
-    // Build session parameters
-    const sessionParams: Record<string, string> = {
-      'mode': 'payment',
-      'payment_method_types[0]': 'card',
-      'payment_method_types[1]': 'alipay',
-      'payment_method_types[2]': 'wechat_pay',
-      'line_items[0][price_data][currency]': 'hkd',
-      'line_items[0][price_data][product_data][name]': `Order ${orderNumber || orderId}`,
-      'line_items[0][price_data][unit_amount]': String(Math.round(amount * 100)),
-      'line_items[0][quantity]': '1',
-      'metadata[orderId]': orderId,
-      'metadata[orderNumber]': orderNumber || orderId,
-      'success_url': successUrl || `${NEXT_PUBLIC_BASE_URL}/payment/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
-      'cancel_url': cancelUrl || `${NEXT_PUBLIC_BASE_URL}/payment/checkout?orderId=${orderId}`,
-    };
+    const sessionParams = new URLSearchParams();
+    sessionParams.set('mode', 'payment');
+    allowedPaymentMethodTypes.forEach((method, index) => {
+      sessionParams.set(`payment_method_types[${index}]`, method);
+    });
+    sessionParams.set('line_items[0][price_data][currency]', 'hkd');
+    sessionParams.set('line_items[0][price_data][product_data][name]', `Order ${orderNumber || orderId}`);
+    sessionParams.set('line_items[0][price_data][unit_amount]', String(Math.round(parsedAmount * 100)));
+    sessionParams.set('line_items[0][quantity]', '1');
+    sessionParams.set('metadata[orderId]', orderId);
+    sessionParams.set('metadata[orderNumber]', orderNumber || orderId);
+    sessionParams.set('metadata[selectedPaymentMethod]', paymentMethod || 'card');
+    if (paymentMethodId) {
+      sessionParams.set('metadata[selectedPaymentMethodId]', paymentMethodId);
+    }
+    sessionParams.set(
+      'success_url',
+      successUrl || `${baseUrl}/payment/success?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`
+    );
+    sessionParams.set(
+      'cancel_url',
+      cancelUrl || `${baseUrl}/payment/cancel?orderId=${orderId}`
+    );
 
     // If user has a Stripe Customer ID, attach to session
     if (customerId) {
-      sessionParams['customer'] = customerId;
+      sessionParams.set('customer', customerId);
     } else if (customerEmail) {
       // If no customer ID but has email, create a customer
       const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
@@ -64,25 +108,26 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          'email': customerEmail,
+          email: customerEmail,
           'metadata[orderId]': orderId,
         }).toString(),
       });
-      
+
       if (customerResponse.ok) {
         const customer = await customerResponse.json();
-        sessionParams['customer'] = customer.id;
+        sessionParams.set('customer', customer.id);
       }
     }
 
-    // If using a saved payment method (only for card)
-    if (paymentMethodId) {
-      sessionParams['payment_method'] = paymentMethodId;
-      sessionParams['payment_method_types[0]'] = 'card'; // Force card only when using saved method
+    // Save card for future off-session use when explicitly requested
+    if (saveCard && allowedPaymentMethodTypes.includes('card')) {
+      sessionParams.set('payment_intent_data[setup_future_usage]', 'off_session');
     }
 
     // Add payment method options for WeChat Pay
-    sessionParams['payment_method_options[wechat_pay][client]'] = 'web';
+    if (allowedPaymentMethodTypes.includes('wechat_pay')) {
+      sessionParams.set('payment_method_options[wechat_pay][client]', 'web');
+    }
 
     // Create Stripe Checkout Session via fetch
     const stripeResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -91,12 +136,12 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${stripeSecretKey}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams(sessionParams).toString(),
+      body: sessionParams.toString(),
     });
 
     if (!stripeResponse.ok) {
-      const errorData = await stripeResponse.json();
-      throw new Error(errorData.error?.message || 'Failed to create Stripe session');
+      const message = await getStripeErrorMessage(stripeResponse);
+      throw new Error(message);
     }
 
     const session = await stripeResponse.json();
@@ -107,7 +152,7 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
       customerId: session.customer,
       orderId,
-      amount,
+      amount: parsedAmount,
       currency: 'HKD'
     });
 
@@ -144,8 +189,8 @@ export async function GET(request: NextRequest) {
     });
 
     if (!stripeResponse.ok) {
-      const errorData = await stripeResponse.json();
-      throw new Error(errorData.error?.message || 'Failed to retrieve session');
+      const message = await getStripeErrorMessage(stripeResponse);
+      throw new Error(message);
     }
 
     const session = await stripeResponse.json();
@@ -153,6 +198,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       sessionId: session.id,
       paymentStatus: session.payment_status,
+      orderId: session.metadata?.orderId || null,
       customerEmail: session.customer_email,
       customerId: session.customer,
       amountTotal: session.amount_total ? session.amount_total / 100 : null,

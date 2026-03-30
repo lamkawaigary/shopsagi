@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { CheckCircle, CreditCard, Loader2, Plus } from 'lucide-react';
+import { CheckCircle, CreditCard, Loader2 } from 'lucide-react';
 
 interface SavedCard {
   id: string;
@@ -107,6 +107,7 @@ function CheckoutContent() {
         orderId,
         orderNumber: order?.orderNumber,
         customerEmail: order?.customerEmail || order?.email || user?.email,
+        paymentMethod: selectedMethod,
       };
 
       // If we have a customer ID, include it
@@ -116,6 +117,8 @@ function CheckoutContent() {
 
       // If using a saved card (only works with card type)
       if (selectedCardId && selectedMethod === 'card') {
+        // Stripe Checkout cannot reliably force a specific saved card at session-creation time.
+        // We keep the selected card id for logging/analytics only.
         paymentParams.paymentMethodId = selectedCardId;
       }
 
