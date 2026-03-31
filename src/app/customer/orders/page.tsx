@@ -2,21 +2,75 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Link from 'next/link';
 
+type OrderItem = {
+  name?: string;
+  quantity?: number;
+  price?: number;
+};
+
+type OrderRecord = {
+  id: string;
+  orderNumber?: string;
+  createdAt?: { toDate?: () => Date } | string | Date;
+  merchantName?: string;
+  status?: string;
+  items?: OrderItem[];
+  total?: number;
+};
+
+function normalizeDate(value?: { toDate?: () => Date } | string | Date) {
+  if (!value) return new Date(0);
+  if (value instanceof Date) return value;
+  if (typeof value === 'object' && 'toDate' in value) {
+    return value.toDate?.() || new Date(0);
+  }
+  return new Date(typeof value === 'string' ? value : 0);
+}
+
 export default function CustomerOrdersPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
+  const [loading, setLoading] = useState(Boolean(auth));
+
+  const fetchOrders = async (userId: string) => {
+    if (!db) return;
+    
+    try {
+      const byUserIdQuery = query(
+        collection(db, 'orders'),
+        where('userId', '==', userId)
+      );
+      const byCustomerIdQuery = query(
+        collection(db, 'orders'),
+        where('customerId', '==', userId)
+      );
+      const [byUserIdSnapshot, byCustomerIdSnapshot] = await Promise.all([
+        getDocs(byUserIdQuery),
+        getDocs(byCustomerIdQuery),
+      ]);
+      const merged = new Map<string, OrderRecord>();
+      [...byUserIdSnapshot.docs, ...byCustomerIdSnapshot.docs].forEach((docSnap) => {
+        merged.set(docSnap.id, {
+          id: docSnap.id,
+          ...(docSnap.data() as Omit<OrderRecord, 'id'>),
+        });
+      });
+      const orderList = Array.from(merged.values());
+      orderList.sort((a, b) => normalizeDate(b.createdAt).getTime() - normalizeDate(a.createdAt).getTime());
+      setOrders(orderList);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrders([]);
+    }
+  };
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
+    if (!auth) return;
     
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -28,27 +82,6 @@ export default function CustomerOrdersPage() {
 
     return () => unsubscribe();
   }, []);
-
-  const fetchOrders = async (userId: string) => {
-    if (!db) return;
-    
-    try {
-      const q = query(
-        collection(db, 'orders'),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      const orderList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setOrders(orderList);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setOrders([]);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -118,20 +151,20 @@ export default function CustomerOrdersPage() {
                 <div>
                   <div className="font-bold">{order.orderNumber || order.id}</div>
                   <div className="text-sm text-gray-500">
-                    {order.createdAt?.toDate?.()?.toLocaleString('zh-HK') || ''}
+                    {normalizeDate(order.createdAt).toLocaleString('zh-HK')}
                   </div>
                   <div className="text-sm text-gray-500">商戶: {order.merchantName}</div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(order.status)}`}>
-                  {getStatusText(order.status)}
+                <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(order.status || '')}`}>
+                  {getStatusText(order.status || '')}
                 </span>
               </div>
 
               <div className="space-y-1 text-sm">
-                {order.items?.map((item: any, index: number) => (
+                {order.items?.map((item, index: number) => (
                   <div key={index} className="flex justify-between">
                     <span>{item.name} x {item.quantity}</span>
-                    <span>HK${item.price * item.quantity}</span>
+                    <span>HK${(item.price || 0) * (item.quantity || 0)}</span>
                   </div>
                 ))}
               </div>

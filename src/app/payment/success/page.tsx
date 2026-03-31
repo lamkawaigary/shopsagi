@@ -4,7 +4,14 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { CheckCircle, Home, ShoppingBag, Loader2 } from 'lucide-react';
+import { CheckCircle, Home, ShoppingBag, Loader2, AlertTriangle } from 'lucide-react';
+
+type PaymentSessionResponse = {
+  paymentStatus?: string;
+  amountTotal?: number | null;
+  orderId?: string | null;
+  sessionId?: string;
+};
 
 function SuccessContent() {
   const router = useRouter();
@@ -16,7 +23,8 @@ function SuccessContent() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!orderId && !sessionId) {
+    if (!sessionId) {
+      setError('缺少付款 Session，無法確認付款狀態');
       setLoading(false);
       return;
     }
@@ -25,58 +33,42 @@ function SuccessContent() {
       console.log('updateOrderStatus called', { orderId, sessionId, dbExists: !!db });
       
       if (!db) {
-        console.error('Firebase db is not initialized!');
-        // Try to re-initialize Firebase
-        try {
-          const { default: firebaseApp } = await import('@/lib/firebase');
-          console.log('Firebase app:', firebaseApp);
-          const { db: newDb } = await import('@/lib/firebase');
-          console.log('Re-imported db:', newDb);
-        } catch (e) {
-          console.error('Failed to re-import Firebase:', e);
-        }
+        setError('Firebase 未初始化，暫時未能更新訂單狀態');
         setLoading(false);
         return;
       }
       
       try {
-        // If we have a session_id, verify with Stripe first
-        let paymentVerified = false;
-        
-        if (sessionId) {
-          try {
-            const response = await fetch(`/api/payment?sessionId=${sessionId}`);
-            const data = await response.json();
-            
-            if (data.paymentStatus === 'paid') {
-              paymentVerified = true;
-              await updateDoc(doc(db, 'orders', orderId), {
-                paymentStatus: 'paid',
-                stripeSessionId: sessionId,
-                paidAt: new Date().toISOString(),
-                paymentAmount: data.amountTotal
-              });
-              console.log('Order updated with Stripe verification:', orderId);
-            }
-          } catch (verifyErr) {
-            console.error('Stripe verification failed, trying direct update:', verifyErr);
-          }
+        const response = await fetch(`/api/payment?sessionId=${sessionId}`);
+        const data = (await response.json()) as PaymentSessionResponse;
+
+        if (!response.ok) {
+          throw new Error('無法向 Stripe 驗證付款結果');
         }
-        
-        // If Stripe verification didn't work, still try to update the order
-        // This handles cases where webhook hasn't fired yet
-        if (!paymentVerified && orderId) {
-          await updateDoc(doc(db, 'orders', orderId), {
-            paymentStatus: 'paid',
-            paidAt: new Date().toISOString(),
-            stripeSessionId: sessionId || null,
-            paidVia: 'checkout_return'
-          });
-          console.log('Order marked as paid (direct update):', orderId);
+
+        if (data.paymentStatus !== 'paid') {
+          setError('付款尚未完成或驗證失敗，請稍後於訂單頁面再確認');
+          setLoading(false);
+          return;
         }
+
+        const verifiedOrderId = data.orderId || orderId;
+        if (!verifiedOrderId) {
+          setError('找不到對應訂單，無法更新付款狀態');
+          setLoading(false);
+          return;
+        }
+
+        await updateDoc(doc(db, 'orders', verifiedOrderId), {
+          paymentStatus: 'paid',
+          stripeSessionId: data.sessionId || sessionId,
+          paidAt: new Date().toISOString(),
+          paymentAmount: data.amountTotal ?? null,
+          paidVia: 'checkout_return_verified'
+        });
       } catch (err) {
         console.error('Error updating order:', err);
-        setError('更新訂單狀態時發生錯誤');
+        setError('更新訂單狀態時發生錯誤，請到訂單頁面重整確認');
       }
       
       setLoading(false);
@@ -102,9 +94,7 @@ function SuccessContent() {
         <div className="max-w-md w-full text-center">
           <div className="bg-white rounded-2xl shadow-sm p-8">
             <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <AlertTriangle className="w-10 h-10 text-yellow-600" />
             </div>
             
             <h1 className="text-2xl font-bold text-gray-900 mb-2">

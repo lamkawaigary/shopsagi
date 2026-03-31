@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backfill:orders:dry": "npx tsx scripts/backfill-orders.ts --dry-run",
+    "backfill:orders": "npx tsx scripts/backfill-orders.ts"
   },
   "dependencies": {
     "firebase": "^12.10.0",

@@ -6,9 +6,9 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import Link from 'next/link';
-import { MapPin, Plus, ChevronDown } from 'lucide-react';
+import { MapPin, Plus } from 'lucide-react';
 
 interface Address {
   id: string;
@@ -23,10 +23,8 @@ interface Address {
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
-  const [showAddressForm, setShowAddressForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
@@ -34,16 +32,6 @@ export default function CheckoutPage() {
     deliveryAddress: '',
     notes: '',
   });
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth!, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        await fetchAddresses(currentUser.uid);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   const fetchAddresses = async (userId: string) => {
     if (!db) return;
@@ -72,8 +60,16 @@ export default function CheckoutPage() {
       deliveryAddress: addr.address + (addr.district ? `, ${addr.district}` : ''),
       notes: ''
     });
-    setShowAddressForm(false);
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth!, async (currentUser) => {
+      if (currentUser) {
+        await fetchAddresses(currentUser.uid);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,16 +87,40 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      const merchantIds = Array.from(
+        new Set(
+          items
+            .map((item) => item.merchantId)
+            .filter((id): id is string => Boolean(id))
+        )
+      );
+      const merchantNames = Array.from(
+        new Set(
+          items
+            .map((item) => item.merchantName)
+            .filter((name): name is string => Boolean(name))
+        )
+      );
+      const orderNumber = `SG${Date.now().toString().slice(-8)}`;
+
       // Create order
       const orderData = {
         userId: auth.currentUser.uid,
+        customerId: auth.currentUser.uid,
+        orderNumber,
         items: items.map(item => ({
           productId: item.id,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
           merchantId: item.merchantId,
+          merchantName: item.merchantName,
         })),
+        merchantIds,
+        // Backward-compat for legacy merchant query field name.
+        itemsMerchantIds: merchantIds,
+        merchantId: merchantIds.length === 1 ? merchantIds[0] : null,
+        merchantName: merchantNames.length === 1 ? merchantNames[0] : merchantNames.join(' / '),
         total,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,

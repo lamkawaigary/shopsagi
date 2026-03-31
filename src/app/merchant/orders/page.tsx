@@ -2,34 +2,113 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, limit } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { Search, Scan, Calendar, DollarSign, Package } from 'lucide-react';
+import { Scan, Calendar, Package } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'delivering', 'completed'];
 
+type MerchantOrderItem = {
+  name?: string;
+  quantity?: number;
+  price?: number;
+  merchantId?: string;
+};
+
+type MerchantOrderRecord = {
+  id: string;
+  orderNumber?: string;
+  customerName?: string;
+  customerPhone?: string;
+  deliveryAddress?: string;
+  status?: string;
+  total?: number;
+  createdAt?: { toDate?: () => Date } | string | Date;
+  items?: MerchantOrderItem[];
+};
+
+type LegacyOrderItem = {
+  merchantId?: string;
+};
+
+function normalizeMerchantOrderDate(value?: MerchantOrderRecord['createdAt']) {
+  if (!value) return new Date(0);
+  if (value instanceof Date) return value;
+  if (typeof value === 'string') return new Date(value);
+  if (typeof value === 'object' && 'toDate' in value) {
+    return value.toDate?.() || new Date(0);
+  }
+  return new Date(0);
+}
+
 export default function OrdersPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setUser] = useState<User | null>(null);
+  const [orders, setOrders] = useState<MerchantOrderRecord[]>([]);
+  const [loading, setLoading] = useState(() => Boolean(auth));
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [showScanner, setShowScanner] = useState(false);
 
+  const fetchOrders = async (userId: string) => {
+    if (!db) return;
+    
+    try {
+      const byMerchantIdQuery = query(
+        collection(db, 'orders'),
+        where('merchantId', '==', userId),
+        limit(200)
+      );
+      const byMerchantIdsQuery = query(
+        collection(db, 'orders'),
+        where('merchantIds', 'array-contains', userId),
+        limit(200)
+      );
+      const [byMerchantIdSnapshot, byMerchantIdsSnapshot, allOrdersSnapshot] = await Promise.all([
+        getDocs(byMerchantIdQuery),
+        getDocs(byMerchantIdsQuery),
+        // Legacy compatibility: old docs may only keep merchant linkage in items[].merchantId.
+        getDocs(query(collection(db, 'orders'), limit(400))),
+      ]);
+      const merged = new Map<string, MerchantOrderRecord>();
+      [...byMerchantIdSnapshot.docs, ...byMerchantIdsSnapshot.docs].forEach((docSnap) => {
+        merged.set(docSnap.id, { id: docSnap.id, ...(docSnap.data() as Omit<MerchantOrderRecord, 'id'>) });
+      });
+      allOrdersSnapshot.docs.forEach((docSnap) => {
+        if (merged.has(docSnap.id)) return;
+        const data = docSnap.data() as Omit<MerchantOrderRecord, 'id'> & { items?: LegacyOrderItem[] };
+        const belongsToMerchant = Array.isArray(data.items)
+          && data.items.some((item) => item?.merchantId === userId);
+        if (belongsToMerchant) {
+          merged.set(docSnap.id, { id: docSnap.id, ...(data as Omit<MerchantOrderRecord, 'id'>) });
+        }
+      });
+      const orderList = Array.from(merged.values())
+        .sort((a, b) => {
+          const aDate = (a as { createdAt?: { toDate?: () => Date } }).createdAt?.toDate?.() || new Date(0);
+          const bDate = (b as { createdAt?: { toDate?: () => Date } }).createdAt?.toDate?.() || new Date(0);
+          return bDate.getTime() - aDate.getTime();
+        });
+      setOrders(orderList);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrders([]);
+    }
+  };
+
   // Stats
   const todayOrders = orders.filter(o => {
-    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const orderDate = normalizeMerchantOrderDate(o.createdAt);
     const today = new Date();
     return orderDate.toDateString() === today.toDateString();
   });
   const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
   const weekOrders = orders.filter(o => {
-    const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    const orderDate = normalizeMerchantOrderDate(o.createdAt);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     return orderDate >= weekAgo;
@@ -42,11 +121,11 @@ export default function OrdersPage() {
   };
 
   // Filter by date
-  const filterByDate = (orders: any[]) => {
-    if (dateFilter === 'all') return orders;
+  const filterByDate = (ordersToFilter: MerchantOrderRecord[]) => {
+    if (dateFilter === 'all') return ordersToFilter;
     const now = new Date();
-    return orders.filter(o => {
-      const orderDate = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt);
+    return ordersToFilter.filter((o) => {
+      const orderDate = normalizeMerchantOrderDate(o.createdAt);
       if (dateFilter === 'today') {
         return orderDate.toDateString() === now.toDateString();
       } else if (dateFilter === 'week') {
@@ -65,10 +144,7 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
+    if (!auth) return;
     
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -80,27 +156,6 @@ export default function OrdersPage() {
 
     return () => unsubscribe();
   }, []);
-
-  const fetchOrders = async (userId: string) => {
-    if (!db) return;
-    
-    try {
-      const q = query(
-        collection(db, 'orders'),
-        where('merchantId', '==', userId),
-        orderBy('createdAt', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      const orderList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setOrders(orderList);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setOrders([]);
-    }
-  };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     if (!db) return;
@@ -263,11 +318,11 @@ export default function OrdersPage() {
                 <div>
                   <div className="font-bold text-lg">{order.orderNumber || order.id}</div>
                   <div className="text-sm text-gray-500">
-                    {order.createdAt?.toDate?.().toLocaleString('zh-HK') || ''}
+                    {normalizeMerchantOrderDate(order.createdAt).toLocaleString('zh-HK')}
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(order.status)}`}>
-                  {getStatusText(order.status)}
+                <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(order.status || '')}`}>
+                  {getStatusText(order.status || '')}
                 </span>
               </div>
 
@@ -292,10 +347,10 @@ export default function OrdersPage() {
               {/* Items */}
               <div className="border-t border-b py-4 mb-4">
                 <div className="text-sm text-gray-500 mb-2">訂單內容：</div>
-                {order.items?.map((item: any, index: number) => (
+                {order.items?.map((item, index: number) => (
                   <div key={index} className="flex justify-between py-1">
                     <span>{item.name} x {item.quantity}</span>
-                    <span>HK${item.price * item.quantity}</span>
+                    <span>HK${(item.price || 0) * (item.quantity || 0)}</span>
                   </div>
                 ))}
               </div>
@@ -317,7 +372,7 @@ export default function OrdersPage() {
                   {order.status !== 'cancelled' && order.status !== 'completed' && (
                     <button
                       onClick={() => {
-                        const nextStatus = getNextStatus(order.status);
+                        const nextStatus = getNextStatus(order.status || 'pending');
                         if (nextStatus) updateOrderStatus(order.id, nextStatus);
                       }}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

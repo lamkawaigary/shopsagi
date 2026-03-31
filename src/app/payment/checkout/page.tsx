@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { CheckCircle, CreditCard, Loader2, Plus } from 'lucide-react';
+import { CheckCircle, CreditCard, Loader2 } from 'lucide-react';
 
 interface SavedCard {
   id: string;
@@ -15,6 +15,24 @@ interface SavedCard {
   expMonth: number;
   expYear: number;
   isDefault: boolean;
+}
+
+interface CheckoutOrder {
+  id: string;
+  total?: number;
+  orderNumber?: string;
+  customerEmail?: string;
+  email?: string;
+}
+
+interface PaymentRequestPayload {
+  amount: number;
+  orderId: string;
+  orderNumber?: string;
+  customerEmail?: string | null;
+  paymentMethod: string;
+  customerId?: string;
+  paymentMethodId?: string;
 }
 
 const PAYMENT_METHODS = [
@@ -29,7 +47,7 @@ function CheckoutContent() {
   const orderId = searchParams?.get('orderId') || '';
   
   const [user, setUser] = useState<User | null>(null);
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<CheckoutOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<string>('card');
   const [processing, setProcessing] = useState(false);
@@ -88,7 +106,8 @@ function CheckoutContent() {
       if (!db) return;
       const orderDoc = await getDoc(doc(db, 'orders', orderId));
       if (orderDoc.exists()) {
-        setOrder({ id: orderDoc.id, ...orderDoc.data() });
+        const data = orderDoc.data() as Omit<CheckoutOrder, 'id'>;
+        setOrder({ id: orderDoc.id, ...data });
       }
       setLoading(false);
     };
@@ -102,11 +121,12 @@ function CheckoutContent() {
     setProcessing(true);
     try {
       // Determine payment parameters
-      const paymentParams: any = {
+      const paymentParams: PaymentRequestPayload = {
         amount: order?.total || 0,
         orderId,
         orderNumber: order?.orderNumber,
-        customerEmail: order?.customerEmail || order?.email || user?.email,
+        customerEmail: order?.customerEmail || order?.email || user?.email || null,
+        paymentMethod: selectedMethod,
       };
 
       // If we have a customer ID, include it
@@ -116,6 +136,8 @@ function CheckoutContent() {
 
       // If using a saved card (only works with card type)
       if (selectedCardId && selectedMethod === 'card') {
+        // Stripe Checkout cannot reliably force a specific saved card at session-creation time.
+        // We keep the selected card id for logging/analytics only.
         paymentParams.paymentMethodId = selectedCardId;
       }
 
@@ -133,9 +155,9 @@ function CheckoutContent() {
       } else {
         throw new Error(data.error || 'Payment failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      const errorMessage = error.message || 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`付款失敗: ${errorMessage}\n\n請截圖此錯誤聯繫客服`);
       setProcessing(false);
     }
