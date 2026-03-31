@@ -204,6 +204,9 @@ export default function CustomerHomePage() {
                   </div>
                   <div className="p-2.5 md:p-3">
                     <div className="font-medium text-sm mb-1 line-clamp-2">{product.name}</div>
+                    <div className="text-xs text-gray-500 mb-1">
+                      店: {merchant?.shopName || '商戶'}
+                    </div>
                     <div className="text-purple-600 font-bold">HK${product.price}</div>
                     <button 
                       onClick={() => handleAddToCart(product, merchant!)}
