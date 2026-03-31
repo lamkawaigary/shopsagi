@@ -30,7 +30,23 @@ type MerchantOrderDoc = {
   orderNumber?: string;
   customerName?: string;
   items?: unknown[];
+  merchantId?: string | null;
+  merchantIds?: string[];
 };
+
+function extractItemMerchantIds(items?: unknown[]) {
+  if (!Array.isArray(items)) return [];
+  const ids = new Set<string>();
+  items.forEach((item) => {
+    if (item && typeof item === 'object') {
+      const merchantId = (item as { merchantId?: unknown }).merchantId;
+      if (typeof merchantId === 'string' && merchantId) {
+        ids.add(merchantId);
+      }
+    }
+  });
+  return Array.from(ids);
+}
 
 type DisplayOrder = {
   id: string;
@@ -94,7 +110,12 @@ export default function DashboardPage() {
       });
 
       const mergedOrders = Array.from(merged.values());
-      const sortedOrders = [...mergedOrders].sort((a, b) => {
+      const filteredOrders = mergedOrders.filter((order) => {
+        if (order.merchantId === userId) return true;
+        if (Array.isArray(order.merchantIds) && order.merchantIds.includes(userId)) return true;
+        return extractItemMerchantIds(order.items).includes(userId);
+      });
+      const sortedOrders = [...filteredOrders].sort((a, b) => {
         const dateA = a.createdAt && typeof a.createdAt === 'object' && 'toDate' in a.createdAt
           ? a.createdAt.toDate?.() || new Date(0)
           : new Date((a.createdAt as string | Date | undefined) || 0);
@@ -105,10 +126,10 @@ export default function DashboardPage() {
       });
       setRecentOrders(sortedOrders.slice(0, 5));
 
-      // Calculate stats based on merged records (not just recent 5)
-      const totalOrders = mergedOrders.length;
-      const pendingOrders = mergedOrders.filter((o) => o.status === 'pending').length;
-      const todayRevenue = mergedOrders
+      // Calculate stats based on merchant-filtered records (not just recent 5)
+      const totalOrders = filteredOrders.length;
+      const pendingOrders = filteredOrders.filter((o) => o.status === 'pending').length;
+      const todayRevenue = filteredOrders
         .filter((o) => {
           const orderDate =
             o.createdAt && typeof o.createdAt === 'object' && 'toDate' in o.createdAt

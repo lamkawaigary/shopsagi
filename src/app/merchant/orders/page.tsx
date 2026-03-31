@@ -16,6 +16,7 @@ type MerchantOrderItem = {
   name?: string;
   quantity?: number;
   price?: number;
+  merchantId?: string;
 };
 
 type MerchantOrderRecord = {
@@ -28,6 +29,10 @@ type MerchantOrderRecord = {
   total?: number;
   createdAt?: { toDate?: () => Date } | string | Date;
   items?: MerchantOrderItem[];
+};
+
+type LegacyOrderItem = {
+  merchantId?: string;
 };
 
 function normalizeMerchantOrderDate(value?: MerchantOrderRecord['createdAt']) {
@@ -63,13 +68,24 @@ export default function OrdersPage() {
         where('merchantIds', 'array-contains', userId),
         limit(200)
       );
-      const [byMerchantIdSnapshot, byMerchantIdsSnapshot] = await Promise.all([
+      const [byMerchantIdSnapshot, byMerchantIdsSnapshot, allOrdersSnapshot] = await Promise.all([
         getDocs(byMerchantIdQuery),
         getDocs(byMerchantIdsQuery),
+        // Legacy compatibility: old docs may only keep merchant linkage in items[].merchantId.
+        getDocs(query(collection(db, 'orders'), limit(400))),
       ]);
       const merged = new Map<string, MerchantOrderRecord>();
       [...byMerchantIdSnapshot.docs, ...byMerchantIdsSnapshot.docs].forEach((docSnap) => {
         merged.set(docSnap.id, { id: docSnap.id, ...(docSnap.data() as Omit<MerchantOrderRecord, 'id'>) });
+      });
+      allOrdersSnapshot.docs.forEach((docSnap) => {
+        if (merged.has(docSnap.id)) return;
+        const data = docSnap.data() as Omit<MerchantOrderRecord, 'id'> & { items?: LegacyOrderItem[] };
+        const belongsToMerchant = Array.isArray(data.items)
+          && data.items.some((item) => item?.merchantId === userId);
+        if (belongsToMerchant) {
+          merged.set(docSnap.id, { id: docSnap.id, ...(data as Omit<MerchantOrderRecord, 'id'>) });
+        }
       });
       const orderList = Array.from(merged.values())
         .sort((a, b) => {
