@@ -100,6 +100,7 @@ export default function CheckoutPage() {
           price: item.price,
           quantity: item.quantity,
           merchantId: item.merchantId,
+          merchantName: item.merchantName || '商戶',
         })),
         total,
         customerName: formData.customerName,
@@ -187,9 +188,10 @@ export default function CheckoutPage() {
           <h3 className="font-semibold mb-3">訂單詳情</h3>
           <div className="space-y-2">
             {items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span>{item.name} x {item.quantity}</span>
-                <span>HK${item.price * item.quantity}</span>
+              <div key={item.id}>
+                <div className="text-sm font-medium">{item.name} x {item.quantity}</div>
+                <div className="text-xs text-gray-500">商戶: {item.merchantName || '未顯示'}</div>
+                <div className="text-sm text-right">HK${item.price * item.quantity}</div>
               </div>
             ))}
           </div>
