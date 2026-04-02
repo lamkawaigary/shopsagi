@@ -85,16 +85,31 @@ export default function OrdersPage() {
     if (!db) return;
     
     try {
-      const q = query(
+      // Try query by merchantId (the product owner ID)
+      let q = query(
         collection(db, 'orders'),
         where('merchantId', '==', userId),
         orderBy('createdAt', 'desc')
       );
-      const snapshot = await getDocs(q);
-      const orderList = snapshot.docs.map(doc => ({
+      
+      let snapshot = await getDocs(q);
+      let orderList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // If no results, also check items array for this merchant's products
+      if (orderList.length === 0) {
+        // Query all orders and filter client-side for items belonging to this merchant
+        const allQ = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        const allSnapshot = await getDocs(allQ);
+        orderList = allSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter((order: any) => 
+            order.items?.some((item: any) => item.merchantId === userId)
+          );
+      }
+      
       setOrders(orderList);
     } catch (error) {
       console.error('Error fetching orders:', error);
