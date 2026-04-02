@@ -28,6 +28,8 @@ export default function ShopSettingsPage() {
     description: '',
     phone: '',
     address: '',
+    lat: null as number | null,
+    lng: null as number | null,
     logo: null as File | null,
     logoUrl: '',
     businessHours: DEFAULT_BUSINESS_HOURS,
@@ -62,6 +64,8 @@ export default function ShopSettingsPage() {
           description: data.description || '',
           phone: data.phone || '',
           address: data.address || '',
+          lat: data.lat || null,
+          lng: data.lng || null,
           logoUrl: data.logoUrl || '',
           businessHours: data.businessHours || DEFAULT_BUSINESS_HOURS,
         }));
@@ -93,6 +97,8 @@ export default function ShopSettingsPage() {
         description: shopData.description,
         phone: shopData.phone,
         address: shopData.address,
+        lat: shopData.lat,
+        lng: shopData.lng,
         logoUrl,
         businessHours: shopData.businessHours,
         updatedAt: new Date(),
@@ -205,13 +211,35 @@ export default function ShopSettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   地址
                 </label>
-                <input
-                  type="text"
-                  value={shopData.address}
-                  onChange={(e) => setShopData({ ...shopData, address: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="香港中環..."
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shopData.address}
+                    onChange={(e) => setShopData({ ...shopData, address: e.target.value })}
+                    className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="香港中環..."
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!shopData.address) {
+                        alert('請輸入地址');
+                        return;
+                      }
+                      // TODO: Use Google Geocoding API to convert address to lat/lng
+                      // For now, just show message
+                      alert('Google Maps API setup後可以使用此功能自動取得座標');
+                    }}
+                    className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
+                  >
+                    📍 定位
+                  </button>
+                </div>
+                {shopData.lat && shopData.lng && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ 座標: {shopData.lat}, {shopData.lng}
+                  </p>
+                )}
               </div>
             </div>
           </div>
