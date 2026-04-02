@@ -226,9 +226,27 @@ export default function ShopSettingsPage() {
                         alert('請輸入地址');
                         return;
                       }
-                      // TODO: Use Google Geocoding API to convert address to lat/lng
-                      // For now, just show message
-                      alert('Google Maps API setup後可以使用此功能自動取得座標');
+                      try {
+                        // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
+                        const response = await fetch(
+                          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(shopData.address + ', Hong Kong')}`
+                        );
+                        const data = await response.json();
+                        
+                        if (data && data.length > 0) {
+                          setShopData({
+                            ...shopData,
+                            lat: parseFloat(data[0].lat),
+                            lng: parseFloat(data[0].lon)
+                          });
+                          alert(`✓ 座標已取得: ${data[0].lat}, ${data[0].lon}`);
+                        } else {
+                          alert('搵唔到位置，請嘗試更具體既地址');
+                        }
+                      } catch (err) {
+                        console.error('Geocoding error:', err);
+                        alert('取得座標失敗');
+                      }
                     }}
                     className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
                   >
