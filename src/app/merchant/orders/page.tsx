@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { Search, Scan, Calendar, DollarSign, Package } from 'lucide-react';
@@ -85,30 +85,17 @@ export default function OrdersPage() {
     if (!db) return;
     
     try {
-      // Try query by merchantId (the product owner ID)
-      let q = query(
+      // Show all orders - merchant can see all customer orders
+      const q = query(
         collection(db, 'orders'),
-        where('merchantId', '==', userId),
         orderBy('createdAt', 'desc')
       );
       
-      let snapshot = await getDocs(q);
-      let orderList = snapshot.docs.map(doc => ({
+      const snapshot = await getDocs(q);
+      const orderList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      
-      // If no results, also check items array for this merchant's products
-      if (orderList.length === 0) {
-        // Query all orders and filter client-side for items belonging to this merchant
-        const allQ = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-        const allSnapshot = await getDocs(allQ);
-        orderList = allSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter((order: any) => 
-            order.items?.some((item: any) => item.merchantId === userId)
-          );
-      }
       
       setOrders(orderList);
     } catch (error) {
