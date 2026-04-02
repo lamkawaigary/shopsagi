@@ -91,9 +91,15 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      // Get primary merchant from first item
+      const primaryMerchantId = items[0]?.merchantId || '';
+      const primaryMerchantName = items[0]?.merchantName || '商戶';
+      
       // Create order
       const orderData = {
         userId: auth.currentUser.uid,
+        merchantId: primaryMerchantId,  // Added for merchant dashboard queries
+        merchantName: primaryMerchantName,
         items: items.map(item => ({
           productId: item.id,
           name: item.name,
