@@ -3,97 +3,129 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, MapPin, Navigation } from 'lucide-react';
 
+// Google Maps will be loaded dynamically
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
+
 interface LocationPickerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (lat: number, lng: number, address?: string) => void;
   initialLat?: number | null;
   initialLng?: number | null;
+  apiKey?: string;
 }
 
-const HK_BOUNDS = {
-  north: 22.56,
-  south: 22.28,
-  east: 114.41,
-  west: 114.08
-};
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-export default function LocationPicker({ isOpen, onClose, onSelect, initialLat, initialLng }: LocationPickerProps) {
-  const [selectedLat, setSelectedLat] = useState<number | null>(initialLat || 22.3193);
-  const [selectedLng, setSelectedLng] = useState<number | null>(initialLng || 114.1694);
+export default function LocationPicker({ 
+  isOpen, 
+  onClose, 
+  onSelect, 
+  initialLat, 
+  initialLng 
+}: LocationPickerProps) {
+  const [selectedLat, setSelectedLat] = useState<number>(initialLat || 22.3193);
+  const [selectedLng, setSelectedLng] = useState<number>(initialLng || 114.1694);
   const [address, setAddress] = useState('');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const googleMapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
 
-  // Draw a simple map on canvas
-  const drawMap = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    
-    // Background (Hong Kong waters)
-    ctx.fillStyle = '#87CEEB';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Simple land mass approximation
-    ctx.fillStyle = '#228B22';
-    ctx.beginPath();
-    ctx.ellipse(canvas.width * 0.4, canvas.height * 0.5, canvas.width * 0.3, canvas.height * 0.3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 5; i++) {
-      const x = (canvas.width / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
-      
-      const y = (canvas.height / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
-    
-    // Hong Kong Island label area
-    ctx.fillStyle = '#666';
-    ctx.font = '10px sans-serif';
-    ctx.fillText('Hong Kong Island', canvas.width * 0.3, canvas.height * 0.5);
-    ctx.fillText('Kowloon', canvas.width * 0.65, canvas.height * 0.45);
-    ctx.fillText('NT', canvas.width * 0.5, canvas.height * 0.7);
-    
-  }, []);
-
+  // Load Google Maps script
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(drawMap, 100);
+    if (isOpen && !window.google && GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      window.initMap = () => setMapLoaded(true);
+      document.head.appendChild(script);
     }
-  }, [isOpen, drawMap]);
+  }, [isOpen]);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Convert pixel to lat/lng
-    const lat = HK_BOUNDS.south + ((HK_BOUNDS.north - HK_BOUNDS.south) * (1 - y / canvas.height));
-    const lng = HK_BOUNDS.west + ((HK_BOUNDS.east - HK_BOUNDS.west) * (x / canvas.width));
-    
-    setSelectedLat(Number(lat.toFixed(4)));
-    setSelectedLng(Number(lng.toFixed(4)));
-  };
+  // Initialize map when Google Maps is loaded
+  useEffect(() => {
+    if (isOpen && window.google && mapRef.current && !googleMapRef.current) {
+      const map = new window.google.maps.Map(mapRef.current, {
+        center: { lat: selectedLat, lng: selectedLng },
+        zoom: 13,
+        disableDefaultUI: true,
+        zoomControl: true,
+        streetViewControl: false,
+      });
+      
+      googleMapRef.current = map;
+      
+      // Add click listener
+      map.addListener('click', (e: any) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        setSelectedLat(lat);
+        setSelectedLng(lng);
+        
+        // Update marker
+        if (markerRef.current) {
+          markerRef.current.setPosition(e.latLng);
+        } else {
+          markerRef.current = new window.google.maps.Marker({
+            position: e.latLng,
+            map: map,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#9333ea',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+            }
+          });
+        }
+        
+        // Reverse geocode to get address
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: e.latLng }, (results: any, status: string) => {
+          if (status === 'OK' && results[0]) {
+            setAddress(results[0].formatted_address);
+          }
+        });
+      });
+    }
+  }, [isOpen]);
+
+  // Update map center when initial coords change
+  useEffect(() => {
+    if (googleMapRef.current && initialLat && initialLng) {
+      googleMapRef.current.setCenter({ lat: initialLat, lng: initialLng });
+    }
+  }, [initialLat, initialLng]);
 
   if (!isOpen) return null;
+
+  // Show fallback if no Google Maps API key
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl w-full max-w-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold">需要 Google Maps API Key</h3>
+            <button onClick={onClose}><X className="w-5 h-5" /></button>
+          </div>
+          <p className="text-gray-600 mb-4">
+            請先係 Vercel 度設定 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+          </p>
+          <button onClick={onClose} className="w-full py-3 bg-purple-600 text-white rounded-xl">
+            明白
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -101,79 +133,41 @@ export default function LocationPicker({ isOpen, onClose, onSelect, initialLat, 
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="font-semibold flex items-center gap-2">
-            <Navigation className="w-5 h-5" /> 選擇送貨位置
+            <Navigation className="w-5 h-5" /> 選擇位置
           </h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Interactive Map Canvas */}
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            onClick={handleCanvasClick}
-            className="w-full h-64 cursor-crosshair bg-gray-100"
-          />
-          
-          {/* Selected marker */}
-          {selectedLat && selectedLng && (
-            <div 
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${((selectedLng - HK_BOUNDS.west) / (HK_BOUNDS.east - HK_BOUNDS.west)) * 100}%`,
-                top: `${((HK_BOUNDS.north - selectedLat) / (HK_BOUNDS.north - HK_BOUNDS.south)) * 100}%`
-              }}
-            >
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Google Map */}
+        <div ref={mapRef} className="w-full h-72 bg-gray-100" />
 
-        {/* Instructions */}
-        <div className="bg-purple-50 p-3 text-sm text-purple-700">
-          💡 Click on the map above to mark delivery location
-        </div>
-
-        {/* Selected Coordinates Display */}
+        {/* Selected Info */}
         <div className="p-4 border-t bg-gray-50">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">已選擇位置：</span>
-            {selectedLat && selectedLng && (
-              <span className="font-mono text-purple-600">
-                {selectedLat}, {selectedLng}
-              </span>
-            )}
+            <span className="text-sm text-gray-600">已選擇：</span>
+            <span className="font-mono text-purple-600">
+              {selectedLat?.toFixed(5)}, {selectedLng?.toFixed(5)}
+            </span>
           </div>
           
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg text-sm"
-            placeholder="輸入地址備註 (可選)"
-          />
+          {address && (
+            <p className="text-sm text-gray-600 mb-2">{address}</p>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex gap-3 p-4 border-t">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 border rounded-xl hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="flex-1 py-3 border rounded-xl hover:bg-gray-50">
             取消
           </button>
           <button
             onClick={() => {
-              if (selectedLat && selectedLng) {
-                onSelect(selectedLat, selectedLng, address);
-                onClose();
-              }
+              onSelect(selectedLat, selectedLng, address);
+              onClose();
             }}
-            disabled={!selectedLat || !selectedLng}
-            className="flex-1 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 flex items-center justify-center gap-2"
           >
             <MapPin className="w-5 h-5" />
             確認位置
