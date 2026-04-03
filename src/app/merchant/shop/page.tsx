@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, addDoc, setDoc, doc, getDoc } from '
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import LocationPicker from '@/components/LocationPicker';
 
 const DEFAULT_BUSINESS_HOURS = [
   { day: '星期一', open: '09:00', close: '22:00', closed: false },
@@ -23,6 +24,7 @@ export default function ShopSettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [shopData, setShopData] = useState({
     shopName: '',
     description: '',
@@ -35,7 +37,11 @@ export default function ShopSettingsPage() {
     businessHours: DEFAULT_BUSINESS_HOURS,
   });
 
-  useEffect(() => {
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setShopData({ ...shopData, lat, lng });
+  };
+
+useEffect(() => {
     if (!auth) {
       setLoading(false);
       return;
@@ -221,21 +227,8 @@ export default function ShopSettingsPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      // Open Google Maps in new tab for location picking
-                      const address = shopData.address;
-                      if (!address) {
-                        alert('請先輸入地址');
-                        return;
-                      }
-                      // Open Google Maps search with the address
-                      window.open(
-                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address + ', Hong Kong')}`,
-                        '_blank'
-                      );
-                      alert('係Google Maps度搵你既位置，然後copy URL或者座標貼返過來');
-                    }}
-                    className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
+                    onClick={() => setShowLocationPicker(true)}
+                    className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm flex items-center gap-2"
                   >
                     🗺️ 選擇位置
                   </button>
@@ -323,6 +316,14 @@ export default function ShopSettingsPage() {
           {saving ? '儲存中...' : '儲存設定'}
         </button>
       </form>
+      
+      <LocationPicker
+        isOpen={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={handleLocationSelect}
+        initialLat={shopData.lat}
+        initialLng={shopData.lng}
+      />
     </div>
   );
 }
