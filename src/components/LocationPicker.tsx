@@ -39,20 +39,31 @@ export default function LocationPicker({
 
   // Load Google Maps script
   useEffect(() => {
-    if (isOpen && !window.google && GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+    if (isOpen && !(window as any).google) {
+      // First check if Google Maps already loaded
+      if (typeof window !== 'undefined' && (window as any).google) {
+        setMapLoaded(true);
+        return;
+      }
+      
+      // Load the Google Maps script
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
-      window.initMap = () => setMapLoaded(true);
+      script.onload = () => setMapLoaded(true);
+      script.onerror = () => {
+        console.error('Failed to load Google Maps');
+        setMapLoaded(false);
+      };
       document.head.appendChild(script);
     }
   }, [isOpen]);
 
   // Initialize map when Google Maps is loaded
   useEffect(() => {
-    if (isOpen && window.google && mapRef.current && !googleMapRef.current) {
-      const map = new window.google.maps.Map(mapRef.current, {
+    if (isOpen && (window as any).google && mapRef.current && !googleMapRef.current) {
+      const map = new (window as any).google.maps.Map(mapRef.current, {
         center: { lat: selectedLat, lng: selectedLng },
         zoom: 13,
         disableDefaultUI: true,
@@ -73,11 +84,11 @@ export default function LocationPicker({
         if (markerRef.current) {
           markerRef.current.setPosition(e.latLng);
         } else {
-          markerRef.current = new window.google.maps.Marker({
+          markerRef.current = new (window as any).google.maps.Marker({
             position: e.latLng,
             map: map,
             icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
+              path: (window as any).google.maps.SymbolPath.CIRCLE,
               scale: 10,
               fillColor: '#9333ea',
               fillOpacity: 1,
@@ -88,7 +99,7 @@ export default function LocationPicker({
         }
         
         // Reverse geocode to get address
-        const geocoder = new window.google.maps.Geocoder();
+        const geocoder = new (window as any).google.maps.Geocoder();
         geocoder.geocode({ location: e.latLng }, (results: any, status: string) => {
           if (status === 'OK' && results[0]) {
             setAddress(results[0].formatted_address);
