@@ -221,42 +221,52 @@ export default function ShopSettingsPage() {
                   />
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (!shopData.address) {
-                        alert('請輸入地址');
+                    onClick={() => {
+                      // Open Google Maps in new tab for location picking
+                      const address = shopData.address;
+                      if (!address) {
+                        alert('請先輸入地址');
                         return;
                       }
-                      try {
-                        // Use OpenStreetMap Nominatim for geocoding (free, no API key needed)
-                        const response = await fetch(
-                          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(shopData.address + ', Hong Kong')}`
-                        );
-                        const data = await response.json();
-                        
-                        if (data && data.length > 0) {
-                          setShopData({
-                            ...shopData,
-                            lat: parseFloat(data[0].lat),
-                            lng: parseFloat(data[0].lon)
-                          });
-                          alert(`✓ 座標已取得: ${data[0].lat}, ${data[0].lon}`);
-                        } else {
-                          alert('搵唔到位置，請嘗試更具體既地址');
-                        }
-                      } catch (err) {
-                        console.error('Geocoding error:', err);
-                        alert('取得座標失敗');
-                      }
+                      // Open Google Maps search with the address
+                      window.open(
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address + ', Hong Kong')}`,
+                        '_blank'
+                      );
+                      alert('係Google Maps度搵你既位置，然後copy URL或者座標貼返過來');
                     }}
                     className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
                   >
-                    📍 定位
+                    🗺️ 選擇位置
                   </button>
                 </div>
                 {shopData.lat && shopData.lng && (
                   <p className="text-xs text-green-600 mt-1">
                     ✓ 座標: {shopData.lat}, {shopData.lng}
                   </p>
+                )}
+                {!shopData.lat && (
+                  <div className="mt-2">
+                    <label className="block text-xs text-gray-500 mb-1">或手動輸入座標</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={shopData.lat || ''}
+                        onChange={(e) => setShopData({ ...shopData, lat: parseFloat(e.target.value) || null })}
+                        className="w-24 px-2 py-1 text-sm border rounded"
+                        placeholder="Lat"
+                      />
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={shopData.lng || ''}
+                        onChange={(e) => setShopData({ ...shopData, lng: parseFloat(e.target.value) || null })}
+                        className="w-24 px-2 py-1 text-sm border rounded"
+                        placeholder="Lng"
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
