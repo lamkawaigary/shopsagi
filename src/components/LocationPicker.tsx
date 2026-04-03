@@ -20,7 +20,7 @@ interface LocationPickerProps {
   apiKey?: string;
 }
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyDS57j4SARWQi-_NaKjKliV1znBa41Hm-s';
 
 export default function LocationPicker({ 
   isOpen, 
