@@ -98,32 +98,49 @@ export default function LocationPicker({
     }
   };
 
-  // Search address
+  // Search address using OpenStreetMap Nominatim (free, no API key needed)
   const handleSearch = async () => {
-    if (!searchQuery || !window.google) return;
+    if (!searchQuery) return;
     
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ address: searchQuery + ', Hong Kong' }, (results: any, status: string) => {
-      if (status === 'OK' && results[0]) {
-        const location = results[0].geometry.location;
-        const lat = location.lat();
-        const lng = location.lng();
+    try {
+      // Use OpenStreetMap Nominatim for geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(searchQuery + ', Hong Kong')}`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
         
         setSelectedLat(lat);
         setSelectedLng(lng);
-        setAddress(results[0].formatted_address);
+        setAddress(result.display_name);
         
-        // Center map
+        // Center map if loaded
         if (googleMapRef.current) {
           googleMapRef.current.setCenter({ lat, lng });
           googleMapRef.current.setZoom(16);
         }
         
-        updateMarker(lat, lng);
+        // Update marker
+        if (window.google && markerRef.current) {
+          markerRef.current.setPosition({ lat, lng });
+        } else if (window.google && googleMapRef.current) {
+          markerRef.current = new window.google.maps.Marker({
+            position: { lat, lng },
+            map: googleMapRef.current,
+            animation: window.google.maps.Animation.DROP,
+          });
+        }
       } else {
-        alert('搵唔到呢個地址');
+        alert('搵唔到呢個地址，請試其他關鍵詞');
       }
-    });
+    } catch (err) {
+      console.error('Search error:', err);
+      alert('搜尋失敗，請試多次');
+    }
   };
 
   const handleConfirm = () => {
@@ -149,7 +166,7 @@ export default function LocationPicker({
         {/* Search Section */}
         <div className="p-4 border-b bg-gray-50">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            📍 輸入店舖地址搜尋
+            📍 輸入店舖地址搜尋 (OpenStreetMap)
           </label>
           <div className="flex gap-2">
             <input
