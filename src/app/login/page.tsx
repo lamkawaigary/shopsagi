@@ -5,17 +5,20 @@ import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuth
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Store, Truck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ShoppingCart, Store, Truck, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 
 type Role = 'customer' | 'merchant' | 'driver';
 
 interface RoleConfig {
   id: Role;
   title: string;
+  titleEn: string;
   subtitle: string;
   icon: React.ReactNode;
   color: string;
   bgColor: string;
+  hoverBg: string;
+  iconBg: string;
   redirect: string;
 }
 
@@ -23,28 +26,37 @@ const ROLES: RoleConfig[] = [
   {
     id: 'customer',
     title: '顧客',
+    titleEn: 'Customer',
     subtitle: '瀏覽商店・訂購商品',
-    icon: <ShoppingCart className="w-8 h-8" />,
+    icon: <ShoppingCart className="w-7 h-7" />,
     color: 'text-purple-600',
-    bgColor: 'bg-purple-50 border-purple-200 hover:bg-purple-100',
+    bgColor: 'bg-purple-50',
+    hoverBg: 'hover:bg-purple-100',
+    iconBg: 'bg-purple-100',
     redirect: '/customer'
   },
   {
     id: 'merchant',
     title: '商戶',
+    titleEn: 'Merchant',
     subtitle: '管理商品・處理訂單',
-    icon: <Store className="w-8 h-8" />,
+    icon: <Store className="w-7 h-7" />,
     color: 'text-blue-600',
-    bgColor: 'bg-blue-50 border-blue-200 hover:bg-blue-100',
+    bgColor: 'bg-blue-50',
+    hoverBg: 'hover:bg-blue-100',
+    iconBg: 'bg-blue-100',
     redirect: '/merchant/dashboard'
   },
   {
     id: 'driver',
     title: '司機',
+    titleEn: 'Driver',
     subtitle: '接單配送・賺取收入',
-    icon: <Truck className="w-8 h-8" />,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50 border-green-200 hover:bg-green-100',
+    icon: <Truck className="w-7 h-7" />,
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    hoverBg: 'hover:bg-emerald-100',
+    iconBg: 'bg-emerald-100',
     redirect: '/driver/dashboard'
   }
 ];
@@ -165,24 +177,28 @@ export default function UnifiedLoginPage() {
     setError('');
   };
 
+  const selectedRoleConfig = ROLES.find(r => r.id === selectedRole);
+
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-purple-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen gradient-bg p-4">
+      <div className="max-w-md mx-auto pt-8">
         {/* Logo & Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-2xl mb-4 shadow-lg">
-            <span className="text-2xl">🛒</span>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl mb-4 shadow-xl">
+            <span className="text-4xl">🛒</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">ShopSagi 舖記</h1>
-          <p className="text-gray-500 mt-1">登入以繼續</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            ShopSagi 舖記
+          </h1>
+          <p className="text-gray-500 mt-2">香港本地電商平台</p>
         </div>
 
         {/* Main Card */}
@@ -198,18 +214,16 @@ export default function UnifiedLoginPage() {
                 <button
                   key={role.id}
                   onClick={() => setSelectedRole(role.id)}
-                  className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ${role.bgColor}`}
+                  className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ${role.bgColor} ${role.hoverBg} border-transparent hover:border-gray-200`}
                 >
-                  <div className={`p-3 rounded-xl bg-white shadow-sm ${role.color}`}>
+                  <div className={`p-3 rounded-2xl ${role.iconBg} ${role.color} shadow-sm`}>
                     {role.icon}
                   </div>
                   <div className="text-left flex-1">
                     <div className="font-semibold text-gray-900">{role.title}</div>
                     <div className="text-sm text-gray-500">{role.subtitle}</div>
                   </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ArrowRight className="w-5 h-5 text-gray-400" />
                 </button>
               ))}
             </div>
@@ -217,24 +231,28 @@ export default function UnifiedLoginPage() {
             /* Login Form */
             <div className="space-y-6">
               {/* Selected Role Badge */}
-              <div className={`flex items-center gap-3 p-3 rounded-xl ${ROLES.find(r => r.id === selectedRole)?.bgColor}`}>
-                <div className={`p-2 rounded-lg bg-white shadow-sm ${ROLES.find(r => r.id === selectedRole)?.color}`}>
-                  {ROLES.find(r => r.id === selectedRole)?.icon}
+              <button 
+                onClick={handleBack}
+                className={`w-full p-4 rounded-2xl ${selectedRoleConfig?.bgColor} border-2 border-transparent hover:border-gray-200 transition-all flex items-center gap-4`}
+              >
+                <div className={`p-3 rounded-2xl ${selectedRoleConfig?.iconBg} ${selectedRoleConfig?.color} shadow-sm`}>
+                  {selectedRoleConfig?.icon}
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-gray-900">
-                    {ROLES.find(r => r.id === selectedRole)?.title}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {ROLES.find(r => r.id === selectedRole)?.subtitle}
-                  </div>
+                <div className="flex-1 text-left">
+                  <div className="font-semibold text-gray-900">{selectedRoleConfig?.title}</div>
+                  <div className="text-sm text-gray-500">{selectedRoleConfig?.subtitle}</div>
                 </div>
-                <button 
-                  onClick={handleBack}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  更改
-                </button>
+                <span className="text-sm text-purple-600 font-medium">更改</span>
+              </button>
+
+              {/* Divider */}
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-4 bg-white text-sm text-gray-400">會員登入</span>
+                </div>
               </div>
 
               {/* Email Input */}
@@ -247,7 +265,7 @@ export default function UnifiedLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition"
+                  className="input"
                 />
               </div>
 
@@ -262,7 +280,7 @@ export default function UnifiedLoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 outline-none transition"
+                    className="input pr-12"
                   />
                   <button
                     type="button"
@@ -285,42 +303,36 @@ export default function UnifiedLoginPage() {
               <button
                 onClick={handleEmailLogin}
                 disabled={loading}
-                className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn btn-primary w-full py-3 text-base"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  '登入'
+                  <>
+                    登入 <ArrowRight className="w-5 h-5" />
+                  </>
                 )}
               </button>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">或</span>
-                </div>
-              </div>
 
               {/* Google Login */}
               <button
                 onClick={handleGoogleLogin}
                 disabled={googleLoading}
-                className="w-full py-3 bg-white border border-gray-200 rounded-xl font-semibold hover:bg-gray-50 transition disabled:opacity-50 flex items-center justify-center gap-3"
+                className="btn btn-outline w-full py-3 text-base"
               >
                 {googleLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    使用 Google 登入
+                  </>
                 )}
-                使用 Google 登入
               </button>
 
               {/* Register Link */}
