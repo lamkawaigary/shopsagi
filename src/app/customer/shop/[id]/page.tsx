@@ -22,6 +22,7 @@ interface Product {
   barcode?: string;
   stock?: number;
   status?: string;
+  category?: string;
 }
 
 interface Merchant {

@@ -23,7 +23,7 @@ export async function createMerchant(userId: string, data: {
   businessHours: string;
   categories: string[];
 }) {
-  const docRef = await addDoc(collection(db, COLLECTIONS.MERCHANTS), {
+  const docRef = await addDoc(collection(db!, COLLECTIONS.MERCHANTS), {
     userId,
     ...data,
     plan: 'free', // Default to free plan
@@ -35,7 +35,7 @@ export async function createMerchant(userId: string, data: {
 
 // Get merchant by user ID
 export async function getMerchantByUserId(userId: string) {
-  const q = query(collection(db, COLLECTIONS.MERCHANTS), where('userId', '==', userId));
+  const q = query(collection(db!, COLLECTIONS.MERCHANTS), where('userId', '==', userId));
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
   return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
@@ -44,7 +44,7 @@ export async function getMerchantByUserId(userId: string) {
 // Get all active merchants (for public browsing)
 export async function getActiveMerchants() {
   const q = query(
-    collection(db, COLLECTIONS.MERCHANTS),
+    collection(db!, COLLECTIONS.MERCHANTS),
     where('status', '==', 'active'),
     orderBy('shopName')
   );
@@ -55,7 +55,7 @@ export async function getActiveMerchants() {
 // Get products by merchant
 export async function getProductsByMerchant(merchantId: string) {
   const q = query(
-    collection(db, COLLECTIONS.PRODUCTS),
+    collection(db!, COLLECTIONS.PRODUCTS),
     where('merchantId', '==', merchantId),
     where('status', '==', 'active')
   );
@@ -74,7 +74,7 @@ export async function createOrder(data: {
 }) {
   const pickupCode = Math.floor(100000 + Math.random() * 900000).toString();
   
-  const docRef = await addDoc(collection(db, COLLECTIONS.ORDERS), {
+  const docRef = await addDoc(collection(db!, COLLECTIONS.ORDERS), {
     ...data,
     orderNumber: `ORD-${Date.now()}`,
     pickupCode,
@@ -90,7 +90,7 @@ export async function createOrder(data: {
 // Get orders by merchant
 export async function getOrdersByMerchant(merchantId: string) {
   const q = query(
-    collection(db, COLLECTIONS.ORDERS),
+    collection(db!, COLLECTIONS.ORDERS),
     where('merchantId', '==', merchantId),
     orderBy('createdAt', 'desc'),
     limit(50)
@@ -104,6 +104,6 @@ export async function updateOrderStatus(orderId: string, status: string) {
   // This would need to be a Cloud Function for production
   // For now, we'll use direct update
   const { doc, updateDoc } = require('firebase/firestore');
-  const orderRef = doc(db, COLLECTIONS.ORDERS, orderId);
+  const orderRef = doc(db!, COLLECTIONS.ORDERS, orderId);
   await updateDoc(orderRef, { status, updatedAt: new Date() });
 }

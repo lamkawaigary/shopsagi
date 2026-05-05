@@ -1,16 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart3, Package, FileText, Settings, Menu, X } from 'lucide-react';
+import { 
+  LayoutDashboard, Package, FileText, Store, Wallet, 
+  Settings, LogOut, Menu, X, ChevronLeft, ChevronRight, Bell
+} from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/merchant/dashboard', label: '商戶儀表板', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { href: '/merchant/products', label: '商品管理', icon: <Package className="w-5 h-5" /> },
+  { href: '/merchant/orders', label: '訂單管理', icon: <FileText className="w-5 h-5" /> },
+  { href: '/merchant/shop', label: '店鋪設定', icon: <Store className="w-5 h-5" /> },
+  { href: '/merchant/upgrade', label: '升級方案', icon: <Wallet className="w-5 h-5" /> },
+];
+
 export default function MerchantLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -40,121 +58,153 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-surface)' }}>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-on-surface-variant font-body-sm">載入中...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) return null;
 
-  const navItems = [
-    { href: '/merchant/dashboard', label: '控制台', icon: BarChart3 },
-    { href: '/merchant/products', label: '商品', icon: Package },
-    { href: '/merchant/orders', label: '訂單', icon: FileText },
-    { href: '/merchant/shop', label: '設定', icon: Settings },
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 md:hidden">
-        <div className="px-4 py-3 flex justify-between items-center">
-          <h1 className="text-lg font-bold text-blue-600">ShopSagi 商戶</h1>
-          <button 
-            className="p-2"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <span className="text-xl">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</span>
-          </button>
+  const sidebarContent = (
+    <>
+      {/* Sidebar Header */}
+      <div className="p-6 border-b border-outline-variant flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+          <Store className="w-5 h-5 text-white" />
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="border-t bg-white px-4 py-3 space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`block py-2 px-3 rounded-lg ${
-                  pathname === item.href 
-                    ? 'bg-blue-50 text-blue-600' 
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <button
-              onClick={() => {
-                handleLogout();
-                setMobileMenuOpen(false);
-              }}
-              className="block w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg"
-            >
-              登出
-            </button>
+        {!sidebarCollapsed && (
+          <div>
+            <h1 className="font-h3 text-primary text-sm">OpenShops</h1>
+            <p className="text-label-sm text-on-surface-variant">商戶平台</p>
           </div>
         )}
-      </header>
+      </div>
 
-      {/* Desktop Header */}
-      <header className="bg-white shadow-sm hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold text-blue-600">ShopSagi 商戶端</h1>
-            <nav className="flex gap-6">
-              <Link href="/merchant/dashboard" className="text-gray-600 hover:text-blue-600">
-                控制台
-              </Link>
-              <Link href="/merchant/products" className="text-gray-600 hover:text-blue-600">
-                商品管理
-              </Link>
-              <Link href="/merchant/orders" className="text-gray-600 hover:text-blue-600">
-                訂單管理
-              </Link>
-              <Link href="/merchant/shop" className="text-gray-600 hover:text-blue-600">
-                店鋪設定
-              </Link>
-            </nav>
+      {/* User Info */}
+      <div className="p-4 mx-4 my-4 rounded-xl bg-surface-container">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-xs">
+            {user.email?.[0]?.toUpperCase() || 'M'}
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 truncate max-w-[150px]">{user.email}</span>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-red-600"
-            >
-              登出
-            </button>
-          </div>
+          {!sidebarCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="font-label-md text-primary truncate">{user.email?.split('@')[0]}</p>
+              <p className="text-label-sm text-on-surface-variant truncate">{user.email}</p>
+            </div>
+          )}
         </div>
-      </header>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 py-2">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              {item.icon}
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Sidebar Footer */}
+      <div className="p-4 border-t border-outline-variant">
+        <button
+          onClick={handleLogout}
+          className="sidebar-nav-item text-error hover:bg-error-container hover:text-error w-full"
+        >
+          <LogOut className="w-5 h-5" />
+          {!sidebarCollapsed && <span>登出系統</span>}
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen" style={{ background: 'var(--color-surface)' }}>
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-[55] lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop Collapsed Sidebar Toggle */}
+      <button
+        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        className="hidden lg:flex fixed top-1/2 -translate-y-1/2 z-40 w-6 h-12 items-center justify-center rounded-r-lg shadow-md transition-all hover:scale-105"
+        style={{ 
+          left: sidebarCollapsed ? '0' : 'var(--sidebar-width)',
+          background: 'var(--color-surface-container-lowest)',
+          border: '1px solid var(--color-outline-variant)'
+        }}
+      >
+        {sidebarCollapsed ? (
+          <ChevronRight className="w-4 h-4 text-on-surface-variant" />
+        ) : (
+          <ChevronLeft className="w-4 h-4 text-on-surface-variant" />
+        )}
+      </button>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-8">
-        {children}
+      <main className={sidebarCollapsed ? 'main-content-collapsed' : 'main-content'}>
+        {/* Mobile Header */}
+        <header className="lg:hidden topbar mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 -ml-2 rounded-lg hover:bg-surface-container transition"
+            >
+              <Menu className="w-5 h-5 text-on-surface" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Store className="w-6 h-6 text-primary" />
+              <h1 className="font-h3 text-primary">OpenShops</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/merchant/shop" className="p-2 rounded-lg hover:bg-surface-container transition">
+              <Bell className="w-5 h-5 text-on-surface-variant" />
+            </Link>
+            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-xs">
+              {user.email?.[0]?.toUpperCase() || 'M'}
+            </div>
+          </div>
+        </header>
+
+        {/* Desktop Header Spacer */}
+        <div className="hidden lg:block h-0" />
+
+        {/* Page Content */}
+        <div className="container mx-auto">
+          {children}
+        </div>
       </main>
 
-      {/* Mobile Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg md:hidden safe-area-bottom z-50">
-        <div className="flex justify-around items-center h-14">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 py-2 ${
-                  isActive ? 'text-blue-600' : 'text-gray-500'
-                }`}
-              >
-                <span className="text-xs mt-0.5">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      <style jsx global>{`
+        .main-content-collapsed {
+          margin-left: 0;
+          padding: 32px;
+          min-height: 100vh;
+          background: var(--color-surface);
+        }
+      `}</style>
     </div>
   );
 }
