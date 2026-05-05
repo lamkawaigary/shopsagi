@@ -6,6 +6,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ShoppingCart, Store, Truck, ChevronRight, Eye, EyeOff, Loader2, ArrowRight, CheckCircle, CreditCard, Headset } from 'lucide-react';
 
 type Role = 'customer' | 'merchant' | 'driver';
 
@@ -14,7 +15,7 @@ interface RoleConfig {
   title: string;
   titleEn: string;
   subtitle: string;
-  icon: string;
+  icon: React.ReactNode;
   color: string;
   bgColor: string;
   hoverBg: string;
@@ -28,7 +29,7 @@ const ROLES: RoleConfig[] = [
     title: '顧客',
     titleEn: 'Customer',
     subtitle: '瀏覽商店・訂購商品',
-    icon: 'shopping_cart',
+    icon: <ShoppingCart className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-surface-container',
     hoverBg: 'hover:bg-surface-container-high',
@@ -40,7 +41,7 @@ const ROLES: RoleConfig[] = [
     title: '商戶',
     titleEn: 'Merchant',
     subtitle: '管理商品・處理訂單',
-    icon: 'storefront',
+    icon: <Store className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-surface-container',
     hoverBg: 'hover:bg-surface-container-high',
@@ -52,7 +53,7 @@ const ROLES: RoleConfig[] = [
     title: '司機',
     titleEn: 'Driver',
     subtitle: '接單配送・賺取收入',
-    icon: 'local_shipping',
+    icon: <Truck className="w-6 h-6" />,
     color: 'text-primary',
     bgColor: 'bg-surface-container',
     hoverBg: 'hover:bg-surface-container-high',
@@ -199,11 +200,11 @@ export default function UnifiedLoginPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-2xl">storefront</span>
+              <Store className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">OpenShops</h1>
           </div>
-          <p className="text-white/60 font-body-sm ml-1">專業電商平台</p>
+          <p className="text-white/60 text-sm ml-1">專業電商平台</p>
         </div>
 
         {/* Main Content */}
@@ -217,18 +218,24 @@ export default function UnifiedLoginPage() {
           
           {/* Feature Highlights */}
           <div className="space-y-4">
-            {[
-              { icon: 'verified', text: 'Stripe 安全支付' },
-              { icon: 'analytics', text: '實時數據分析' },
-              { icon: 'support_agent', text: '24/7 客戶支援' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-white/80">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm text-white/90">{item.icon}</span>
-                </div>
-                <span className="font-body-sm">{item.text}</span>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-white/90" />
               </div>
-            ))}
+              <span className="text-sm">Stripe 安全支付</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <CreditCard className="w-4 h-4 text-white/90" />
+              </div>
+              <span className="text-sm">實時數據分析</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <Headset className="w-4 h-4 text-white/90" />
+              </div>
+              <span className="text-sm">24/7 客戶支援</span>
+            </div>
           </div>
         </div>
 
@@ -247,7 +254,7 @@ export default function UnifiedLoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary mb-4">
-              <span className="material-symbols-outlined text-white text-3xl">storefront</span>
+              <Store className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-primary">OpenShops</h1>
             <p className="text-on-surface-variant text-sm mt-1">專業電商平台</p>
@@ -260,7 +267,7 @@ export default function UnifiedLoginPage() {
               <div className="space-y-6">
                 <div className="text-center mb-8">
                   <h2 className="font-h1 text-primary mb-2">歡迎回來</h2>
-                  <p className="text-on-surface-variant font-body-sm">選擇你的角色以繼續登入</p>
+                  <p className="text-on-surface-variant text-sm">選擇你的角色以繼續登入</p>
                 </div>
                 
                 <div className="space-y-3">
@@ -271,13 +278,13 @@ export default function UnifiedLoginPage() {
                       className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${role.bgColor} ${role.hoverBg} border-transparent hover:border-primary`}
                     >
                       <div className={`w-12 h-12 rounded-xl ${role.iconBg} flex items-center justify-center`}>
-                        <span className={`material-symbols-outlined ${role.color} text-xl`}>{role.icon}</span>
+                        <div className={role.color}>{role.icon}</div>
                       </div>
                       <div className="flex-1 text-left">
                         <div className="font-label-md text-primary">{role.title}</div>
                         <div className="text-sm text-on-surface-variant">{role.subtitle}</div>
                       </div>
-                      <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+                      <ChevronRight className="w-5 h-5 text-on-surface-variant" />
                     </button>
                   ))}
                 </div>
@@ -291,7 +298,7 @@ export default function UnifiedLoginPage() {
                   className={`w-full p-4 rounded-xl ${selectedRoleConfig?.bgColor} border-2 border-transparent hover:border-primary transition-all flex items-center gap-4`}
                 >
                   <div className={`w-12 h-12 rounded-xl ${selectedRoleConfig?.iconBg} flex items-center justify-center`}>
-                    <span className={`material-symbols-outlined ${selectedRoleConfig?.color} text-xl`}>{selectedRoleConfig?.icon}</span>
+                    <div className={selectedRoleConfig?.color}>{selectedRoleConfig?.icon}</div>
                   </div>
                   <div className="flex-1 text-left">
                     <div className="font-label-md text-primary">{selectedRoleConfig?.title}</div>
@@ -340,9 +347,9 @@ export default function UnifiedLoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition p-1"
                     >
-                      <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
@@ -350,8 +357,7 @@ export default function UnifiedLoginPage() {
                 {/* Error Message */}
                 {error && (
                   <div className="p-3 rounded-xl bg-error-container text-error text-sm flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">error</span>
-                    {error}
+                    <span className="text-sm">{error}</span>
                   </div>
                 )}
 
@@ -362,11 +368,11 @@ export default function UnifiedLoginPage() {
                   className="btn btn-primary w-full py-3 text-base"
                 >
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
                       登入
-                      <span className="material-symbols-outlined">arrow_forward</span>
+                      <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </button>
@@ -378,7 +384,7 @@ export default function UnifiedLoginPage() {
                   className="btn btn-outline w-full py-3 text-base"
                 >
                   {googleLoading ? (
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
                       <svg className="w-5 h-5" viewBox="0 0 24 24">

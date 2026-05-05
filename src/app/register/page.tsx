@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, on
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { ShoppingCart, Store, Truck, ChevronRight, Eye, EyeOff, Loader2, ArrowRight, CheckCircle, Gift, CreditCard, Headset } from 'lucide-react';
 
 type Role = 'customer' | 'merchant' | 'driver';
 
@@ -13,7 +14,7 @@ interface RoleConfig {
   id: Role;
   title: string;
   subtitle: string;
-  icon: string;
+  icon: React.ReactNode;
   bgColor: string;
   iconBg: string;
   redirect: string;
@@ -24,7 +25,7 @@ const ROLES: RoleConfig[] = [
     id: 'customer',
     title: '顧客',
     subtitle: '瀏覽商店・訂購商品',
-    icon: 'shopping_cart',
+    icon: <ShoppingCart className="w-6 h-6" />,
     bgColor: 'bg-surface-container',
     iconBg: 'bg-primary-fixed-dim',
     redirect: '/customer'
@@ -33,7 +34,7 @@ const ROLES: RoleConfig[] = [
     id: 'merchant',
     title: '商戶',
     subtitle: '管理商品・處理訂單',
-    icon: 'storefront',
+    icon: <Store className="w-6 h-6" />,
     bgColor: 'bg-surface-container',
     iconBg: 'bg-primary-fixed-dim',
     redirect: '/merchant/dashboard'
@@ -42,7 +43,7 @@ const ROLES: RoleConfig[] = [
     id: 'driver',
     title: '司機',
     subtitle: '接單配送・賺取收入',
-    icon: 'local_shipping',
+    icon: <Truck className="w-6 h-6" />,
     bgColor: 'bg-surface-container',
     iconBg: 'bg-primary-fixed-dim',
     redirect: '/driver/dashboard'
@@ -180,7 +181,7 @@ export default function RegisterPage() {
           setError(err.message || '註冊失敗');
         }
       } finally {
-        setLoading(true); // Keep loading state
+        setLoading(false);
       }
     }
   };
@@ -281,11 +282,11 @@ export default function RegisterPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-2xl">storefront</span>
+              <Store className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">OpenShops</h1>
           </div>
-          <p className="text-white/60 font-body-sm ml-1">專業電商平台</p>
+          <p className="text-white/60 text-sm ml-1">專業電商平台</p>
         </div>
 
         {/* Main Content */}
@@ -299,18 +300,24 @@ export default function RegisterPage() {
           
           {/* Benefits */}
           <div className="space-y-4">
-            {[
-              { icon: 'check_circle', text: '免費開店，無隱藏費用' },
-              { icon: 'check_circle', text: '專業數據分析工具' },
-              { icon: 'check_circle', text: 'Stripe 安全支付整合' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-white/80">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm text-secondary-fixed">{item.icon}</span>
-                </div>
-                <span className="font-body-sm">{item.text}</span>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-secondary-fixed" />
               </div>
-            ))}
+              <span className="text-sm">免費開店，無隱藏費用</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <CreditCard className="w-4 h-4 text-secondary-fixed" />
+              </div>
+              <span className="text-sm">專業數據分析工具</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/80">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <Gift className="w-4 h-4 text-secondary-fixed" />
+              </div>
+              <span className="text-sm">Stripe 安全支付整合</span>
+            </div>
           </div>
         </div>
 
@@ -328,7 +335,7 @@ export default function RegisterPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary mb-4">
-              <span className="material-symbols-outlined text-white text-3xl">storefront</span>
+              <Store className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-primary">OpenShops</h1>
             <p className="text-on-surface-variant text-sm mt-1">建立新帳戶</p>
@@ -338,7 +345,7 @@ export default function RegisterPage() {
           <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-8 shadow-lg">
             <div className="text-center mb-8">
               <h2 className="font-h1 text-primary mb-2">建立帳戶</h2>
-              <p className="text-on-surface-variant font-body-sm">選擇你的身份開始</p>
+              <p className="text-on-surface-variant text-sm">選擇你的身份開始</p>
             </div>
 
             {/* Role Selection */}
@@ -361,9 +368,7 @@ export default function RegisterPage() {
                     <div className={`w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center ${
                       role === r.id ? r.iconBg : 'bg-surface-container-high'
                     }`}>
-                      <span className={`material-symbols-outlined ${role === r.id ? 'text-primary' : 'text-on-surface-variant'} text-lg`}>
-                        {r.icon}
-                      </span>
+                      <div className={role === r.id ? 'text-primary' : 'text-on-surface-variant'}>{r.icon}</div>
                     </div>
                     <div className={`text-sm font-label-md ${role === r.id ? 'text-primary' : 'text-on-surface-variant'}`}>
                       {r.title}
@@ -423,9 +428,9 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition p-1"
                     >
-                      <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
@@ -446,8 +451,7 @@ export default function RegisterPage() {
 
                 {error && (
                   <div className="p-3 rounded-xl bg-error-container text-error text-sm flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">error</span>
-                    {error}
+                    <span className="text-sm">{error}</span>
                   </div>
                 )}
 
@@ -457,11 +461,11 @@ export default function RegisterPage() {
                   className="btn btn-primary w-full py-3 text-base"
                 >
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
                       建立帳戶
-                      <span className="material-symbols-outlined">arrow_forward</span>
+                      <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </button>
@@ -486,7 +490,7 @@ export default function RegisterPage() {
               className="btn btn-outline w-full py-3 text-base"
             >
               {googleLoading ? (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
