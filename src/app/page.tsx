@@ -6,7 +6,7 @@ import {
   ShoppingCart, Menu, X, Bell,
   Store, Truck, ShieldCheck, CreditCard,
   User, Package, Settings, LogOut, ShoppingBag,
-  Laptop, Shirt, Home, BookOpen, Dumbbell, Spa, MoreHorizontal
+  Laptop, Shirt, Home, BookOpen, Dumbbell, Sparkles, MoreHorizontal
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -269,7 +269,7 @@ export default function LandingPage() {
               { icon: <Home className="w-8 h-8" style={{ color: '#ea580c' }} />, name: '居家生活', color: '#ea580c' },
               { icon: <BookOpen className="w-8 h-8" style={{ color: '#4f46e5' }} />, name: '圖書文具', color: '#4f46e5' },
               { icon: <Dumbbell className="w-8 h-8" style={{ color: '#0d9488' }} />, name: '運動健身', color: '#0d9488' },
-              { icon: <Spa className="w-8 h-8" style={{ color: '#db2777' }} />, name: '美妝保養', color: '#db2777' },
+              { icon: <Sparkles className="w-8 h-8" style={{ color: '#db2777' }} />, name: '美妝保養', color: '#db2777' },
               { icon: <MoreHorizontal className="w-8 h-8" style={{ color: '#6b7280' }} />, name: '更多', color: '#6b7280' },
             ].map((cat, i) => (
               <button 
