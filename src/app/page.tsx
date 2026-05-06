@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   ShoppingCart, Menu, X, Bell,
   Store, Truck, ShieldCheck, CreditCard,
-  User, Package, Settings, LogOut, ShoppingBag
+  User, Package, Settings, LogOut, ShoppingBag,
+  Laptop, Shirt, Home, BookOpen, Dumbbell, Spa, MoreHorizontal
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -262,22 +263,20 @@ export default function LandingPage() {
           <h3 className="font-h2 text-primary mb-6">瀏覽類別</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: 'laptop', name: '3C電子', color: '#1e40af' },
-              { icon: 'checkroom', name: '時尚服飾', color: '#7c3aed' },
-              { icon: 'shopping_cart', name: '生鮮雜貨', color: '#059669' },
-              { icon: 'home', name: '居家生活', color: '#ea580c' },
-              { icon: 'menu_book', name: '圖書文具', color: '#4f46e5' },
-              { icon: 'fitness_center', name: '運動健身', color: '#0d9488' },
-              { icon: 'spa', name: '美妝保養', color: '#db2777' },
-              { icon: 'more_horiz', name: '更多', color: '#6b7280' },
+              { icon: <Laptop className="w-8 h-8" style={{ color: '#1e40af' }} />, name: '3C電子', color: '#1e40af' },
+              { icon: <Shirt className="w-8 h-8" style={{ color: '#7c3aed' }} />, name: '時尚服飾', color: '#7c3aed' },
+              { icon: <ShoppingCart className="w-8 h-8" style={{ color: '#059669' }} />, name: '生鮮雜貨', color: '#059669' },
+              { icon: <Home className="w-8 h-8" style={{ color: '#ea580c' }} />, name: '居家生活', color: '#ea580c' },
+              { icon: <BookOpen className="w-8 h-8" style={{ color: '#4f46e5' }} />, name: '圖書文具', color: '#4f46e5' },
+              { icon: <Dumbbell className="w-8 h-8" style={{ color: '#0d9488' }} />, name: '運動健身', color: '#0d9488' },
+              { icon: <Spa className="w-8 h-8" style={{ color: '#db2777' }} />, name: '美妝保養', color: '#db2777' },
+              { icon: <MoreHorizontal className="w-8 h-8" style={{ color: '#6b7280' }} />, name: '更多', color: '#6b7280' },
             ].map((cat, i) => (
               <button 
                 key={i}
                 className="p-6 rounded-2xl border border-outline-variant hover:border-primary hover:bg-surface-container transition text-center"
               >
-                <span className="material-symbols-outlined text-4xl mb-3" style={{ color: cat.color }}>
-                  {cat.icon}
-                </span>
+                <span className="mb-3">{cat.icon}</span>
                 <p className="font-label-md text-primary">{cat.name}</p>
               </button>
             ))}
