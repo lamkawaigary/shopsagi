@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#FF6B35"/>
+  
+  <!-- Shopping bag / store icon -->
+  <path d="M352 160H320V128C320 105.909 302.091 88 280 88C257.909 88 240 105.909 240 128V160H208C190.326 160 176 174.326 176 192V400C176 417.674 190.326 432 208 432H352C369.674 432 384 417.674 384 400V192C384 174.326 369.674 160 352 160Z" fill="white"/>
+  
+  <!-- Store front detail -->
+  <rect x="224" y="200" width="112" height="80" rx="8" fill="#FF6B35" opacity="0.3"/>
+  
+  <!-- Store window -->
+  <rect x="232" y="208" width="48" height="64" rx="4" fill="white"/>
+  
+  <!-- Store door -->
+  <rect x="296" y="240" width="32" height="40" rx="2" fill="white"/>
+  
+  <!-- Store roof/awning -->
+  <path d="M192 160H368L352 128H240L192 160Z" fill="white"/>
+  
+  <!-- Store sign -->
+  <rect x="232" y="136" width="96" height="24" rx="4" fill="white" opacity="0.9"/>
+  
+  <!-- Text "OS" on sign -->
+  <text x="280" y="154" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FF6B35" text-anchor="middle">OS</text>
+</svg>
